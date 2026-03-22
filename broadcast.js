@@ -1,6 +1,7 @@
 /**
  * WebSocket Broadcast Module
  * Handles broadcasting messages to all connected WebSocket clients
+ * Updated to be safe for serverless environments
  */
 
 // Store connected clients
@@ -11,7 +12,7 @@ const clients = new Set();
  * @param {WebSocket} ws - WebSocket client
  */
 function addClient(ws) {
-    clients.add(ws);
+    if (clients) clients.add(ws);
 }
 
 /**
@@ -19,7 +20,7 @@ function addClient(ws) {
  * @param {WebSocket} ws - WebSocket client
  */
 function removeClient(ws) {
-    clients.delete(ws);
+    if (clients) clients.delete(ws);
 }
 
 /**
@@ -28,9 +29,14 @@ function removeClient(ws) {
  * @param {Object} data - The data to broadcast
  */
 function broadcastToOthers(sender, data) {
+    if (!clients) return;
     clients.forEach((client) => {
         if (client !== sender && client.readyState === 1) { // WebSocket.OPEN = 1
-            client.send(JSON.stringify(data));
+            try {
+                client.send(JSON.stringify(data));
+            } catch (e) {
+                console.error('Failed to send message to client', e);
+            }
         }
     });
 }
@@ -40,11 +46,21 @@ function broadcastToOthers(sender, data) {
  * @param {Object} data - The data to broadcast
  */
 function broadcastToAll(data) {
+    if (!clients) return;
     clients.forEach((client) => {
         if (client.readyState === 1) { // WebSocket.OPEN = 1
-            client.send(JSON.stringify(data));
+            try {
+                client.send(JSON.stringify(data));
+            } catch (e) {
+                console.error('Failed to send message to client', e);
+            }
         }
     });
+    
+    // In serverless environments, we might want to log that broadcast was called
+    if (process.env.NETLIFY) {
+        console.log('Broadcast called in serverless environment:', data.type);
+    }
 }
 
 module.exports = {

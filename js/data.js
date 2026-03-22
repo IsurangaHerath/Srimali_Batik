@@ -129,6 +129,14 @@ class DataManager {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${protocol}//${window.location.host}`;
         
+        // Only attempt WebSocket if not on Netlify or if we have a real-time server
+        // Netlify Functions don't support persistent WebSockets
+        if (window.location.host.includes('netlify.app')) {
+            console.log('Detected Netlify environment. Using polling for real-time updates instead of WebSockets.');
+            this.initPolling();
+            return;
+        }
+
         this.ws = new WebSocket(wsUrl);
         
         this.ws.onopen = () => {
@@ -151,7 +159,60 @@ class DataManager {
         
         this.ws.onerror = (error) => {
             console.error('WebSocket error:', error);
+            // Fallback to polling on error
+            this.initPolling();
         };
+    }
+
+    /**
+     * Initialize Polling for real-time updates (fallback for Netlify)
+     */
+    initPolling() {
+        if (this.pollingInterval) return;
+        
+        console.log('Initializing data polling (10s interval)');
+        this.pollingInterval = setInterval(() => {
+            this.loadDataSilently();
+        }, 10000);
+    }
+
+    /**
+     * Load data from API without showing full loading state
+     * Compares and updates if changes found
+     */
+    async loadDataSilently() {
+        try {
+            const response = await fetch(`${CONFIG.API_BASE_URL}/all`);
+            if (!response.ok) return;
+            
+            const newData = await response.json();
+            
+            // Basic check if data changed (length check for simplicity)
+            const hasChanged = 
+                newData.patterns?.length !== this.data.patterns.length ||
+                newData.products?.length !== this.data.products.length ||
+                newData.colors?.length !== this.data.colors.length;
+            
+            if (hasChanged) {
+                console.log('Data changes detected via polling, updating UI...');
+                this.data = {
+                    patterns: newData.patterns || [],
+                    products: newData.products || [],
+                    colors: newData.colors || []
+                };
+                
+                // Trigger UI updates
+                if (typeof uiRenderer !== 'undefined' && uiRenderer.renderPatternsGrid) {
+                    uiRenderer.renderPatternsGrid();
+                }
+                if (typeof adminPanel !== 'undefined') {
+                    if (adminPanel.renderProductsList) adminPanel.renderProductsList();
+                    if (adminPanel.renderColorsList) adminPanel.renderColorsList();
+                }
+            }
+        } catch (error) {
+            // Ignore polling errors to avoid console noise
+        }
     }
 
     /**
