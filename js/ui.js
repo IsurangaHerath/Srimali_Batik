@@ -246,6 +246,7 @@ class UIRenderer {
         }
 
         // Hide other sections
+        document.querySelector('.navbar').style.display = 'none';
         document.querySelector('.hero').style.display = 'none';
         document.getElementById('designs').style.display = 'none';
         document.getElementById('about').style.display = 'none';
@@ -282,6 +283,7 @@ class UIRenderer {
      */
     closeProductDetail() {
         document.getElementById('productDetail').classList.remove('active');
+        document.querySelector('.navbar').style.display = 'flex';
         document.querySelector('.hero').style.display = 'flex';
         document.getElementById('designs').style.display = 'block';
         document.getElementById('about').style.display = 'block';

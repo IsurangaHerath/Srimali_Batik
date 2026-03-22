@@ -154,7 +154,7 @@ class AdminPanel {
      * Save pattern (add or update)
      * @param {Event} e - Form submit event
      */
-    savePattern(e) {
+    async savePattern(e) {
         e.preventDefault();
         
         const id = document.getElementById('patternId').value;
@@ -168,32 +168,42 @@ class AdminPanel {
             return;
         }
         
-        if (id) {
-            // Update existing pattern
-            dataManager.updatePattern(id, { name, description, image });
-            uiRenderer.showToast('Pattern updated successfully!', 'success');
-        } else {
-            // Create new pattern
-            const newId = dataManager.generateId('p');
-            dataManager.addPattern({ id: newId, name, description, image });
-            uiRenderer.showToast('Pattern created successfully!', 'success');
+        try {
+            if (id) {
+                // Update existing pattern
+                await dataManager.updatePattern(id, { name, description, image });
+                uiRenderer.showToast('Pattern updated successfully!', 'success');
+            } else {
+                // Create new pattern
+                const newId = dataManager.generateId('p');
+                await dataManager.addPattern({ id: newId, name, description, image });
+                uiRenderer.showToast('Pattern created successfully!', 'success');
+            }
+            
+            this.renderAll();
+            uiRenderer.renderPatternsGrid();
+            this.closeModal('patternModal');
+        } catch (error) {
+            console.error('Error saving pattern:', error);
+            uiRenderer.showToast('Failed to save pattern. Please try again.', 'error');
         }
-        
-        this.renderAll();
-        uiRenderer.renderPatternsGrid();
-        this.closeModal('patternModal');
     }
 
     /**
      * Delete pattern
      * @param {string} id - Pattern ID
      */
-    deletePattern(id) {
+    async deletePattern(id) {
         if (confirm('Are you sure you want to delete this pattern? This will also delete all associated products.')) {
-            dataManager.deletePattern(id);
-            this.renderAll();
-            uiRenderer.renderPatternsGrid();
-            uiRenderer.showToast('Pattern deleted successfully!', 'success');
+            try {
+                await dataManager.deletePattern(id);
+                this.renderAll();
+                uiRenderer.renderPatternsGrid();
+                uiRenderer.showToast('Pattern deleted successfully!', 'success');
+            } catch (error) {
+                console.error('Error deleting pattern:', error);
+                uiRenderer.showToast('Failed to delete pattern. Please try again.', 'error');
+            }
         }
     }
 
@@ -241,7 +251,7 @@ class AdminPanel {
         }
 
         list.innerHTML = products.map(product => {
-            const pattern = dataManager.getPatternById(product.patternId);
+            const pattern = dataManager.getPatternById(product.pattern_id);
             return `
                 <div class="admin-list-item">
                     <div class="admin-list-item-info">
@@ -309,7 +319,7 @@ class AdminPanel {
             const product = dataManager.getProductById(productId);
             title.textContent = 'Edit Product';
             document.getElementById('productId').value = product.id;
-            document.getElementById('productPattern').value = product.patternId;
+            document.getElementById('productPattern').value = product.pattern_id;
             document.getElementById('productName').value = product.name;
             document.getElementById('productType').value = product.type;
             document.getElementById('productDescription').value = product.description;
@@ -344,7 +354,7 @@ class AdminPanel {
      * Save product (add or update)
      * @param {Event} e - Form submit event
      */
-    saveProduct(e) {
+    async saveProduct(e) {
         e.preventDefault();
         
         const id = document.getElementById('productId').value;
@@ -372,30 +382,40 @@ class AdminPanel {
             }
         }
         
-        if (id) {
-            // Update existing product
-            dataManager.updateProduct(id, { patternId, name, type, description, image, price, colorImages });
-            uiRenderer.showToast('Product updated successfully!', 'success');
-        } else {
-            // Create new product
-            const newId = dataManager.generateId('prod');
-            dataManager.addProduct({ id: newId, patternId, name, type, description, image, price, colorImages });
-            uiRenderer.showToast('Product created successfully!', 'success');
+        try {
+            if (id) {
+                // Update existing product
+                await dataManager.updateProduct(id, { patternId, name, type, description, image, price, colorImages });
+                uiRenderer.showToast('Product updated successfully!', 'success');
+            } else {
+                // Create new product
+                const newId = dataManager.generateId('prod');
+                await dataManager.addProduct({ id: newId, patternId, name, type, description, image, price, colorImages });
+                uiRenderer.showToast('Product created successfully!', 'success');
+            }
+            
+            this.renderAll();
+            this.closeModal('productModal');
+        } catch (error) {
+            console.error('Error saving product:', error);
+            uiRenderer.showToast('Failed to save product. Please try again.', 'error');
         }
-        
-        this.renderAll();
-        this.closeModal('productModal');
     }
 
     /**
      * Delete product
      * @param {string} id - Product ID
      */
-    deleteProduct(id) {
+    async deleteProduct(id) {
         if (confirm('Are you sure you want to delete this product?')) {
-            dataManager.deleteProduct(id);
-            this.renderAll();
-            uiRenderer.showToast('Product deleted successfully!', 'success');
+            try {
+                await dataManager.deleteProduct(id);
+                this.renderAll();
+                uiRenderer.showToast('Product deleted successfully!', 'success');
+            } catch (error) {
+                console.error('Error deleting product:', error);
+                uiRenderer.showToast('Failed to delete product. Please try again.', 'error');
+            }
         }
     }
 
@@ -515,7 +535,7 @@ class AdminPanel {
      * Save color (add or update)
      * @param {Event} e - Form submit event
      */
-    saveColor(e) {
+    async saveColor(e) {
         e.preventDefault();
         
         const id = document.getElementById('colorId').value;
@@ -530,19 +550,24 @@ class AdminPanel {
             return;
         }
         
-        if (id) {
-            // Update existing color
-            dataManager.updateColor(id, { name, hex, darkHex, image });
-            uiRenderer.showToast('Color updated successfully!', 'success');
-        } else {
-            // Create new color
-            const newId = name.toLowerCase().replace(/\s+/g, '-');
-            dataManager.addColor({ id: newId, name, hex, darkHex, image });
-            uiRenderer.showToast('Color created successfully!', 'success');
+        try {
+            if (id) {
+                // Update existing color
+                await dataManager.updateColor(id, { name, hex, darkHex, image });
+                uiRenderer.showToast('Color updated successfully!', 'success');
+            } else {
+                // Create new color
+                const newId = name.toLowerCase().replace(/\s+/g, '-');
+                await dataManager.addColor({ id: newId, name, hex, darkHex, image });
+                uiRenderer.showToast('Color created successfully!', 'success');
+            }
+            
+            this.renderAll();
+            this.closeModal('colorModal');
+        } catch (error) {
+            console.error('Error saving color:', error);
+            uiRenderer.showToast('Failed to save color. Please try again.', 'error');
         }
-        
-        this.renderAll();
-        this.closeModal('colorModal');
     }
     
     /**
@@ -569,11 +594,16 @@ class AdminPanel {
      * Delete color
      * @param {string} id - Color ID
      */
-    deleteColor(id) {
+    async deleteColor(id) {
         if (confirm('Are you sure you want to delete this color?')) {
-            dataManager.deleteColor(id);
-            this.renderAll();
-            uiRenderer.showToast('Color deleted successfully!', 'success');
+            try {
+                await dataManager.deleteColor(id);
+                this.renderAll();
+                uiRenderer.showToast('Color deleted successfully!', 'success');
+            } catch (error) {
+                console.error('Error deleting color:', error);
+                uiRenderer.showToast('Failed to delete color. Please try again.', 'error');
+            }
         }
     }
 

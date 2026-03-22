@@ -16,7 +16,7 @@ class App {
     /**
      * Initialize the application
      */
-    init() {
+    async init() {
         if (this.isInitialized) return;
 
         // Initialize theme
@@ -31,8 +31,8 @@ class App {
         // Initialize scroll to top
         this.initScrollToTop();
 
-        // Render initial content
-        this.renderInitialContent();
+        // Render initial content (async to wait for data)
+        await this.renderInitialContent();
 
         // Initialize admin panel
         adminPanel.init();
@@ -201,7 +201,9 @@ class App {
     /**
      * Render initial content
      */
-    renderInitialContent() {
+    async renderInitialContent() {
+        // Wait for data to be loaded from API
+        await dataManager.loadData();
         uiRenderer.renderPatternsGrid();
     }
 
