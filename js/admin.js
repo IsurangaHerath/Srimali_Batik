@@ -77,6 +77,7 @@ class AdminPanel {
         if (!list) return;
 
         const patterns = dataManager.getPatterns();
+        const colors = dataManager.getColors();
         
         if (patterns.length === 0) {
             list.innerHTML = `
@@ -88,29 +89,38 @@ class AdminPanel {
             return;
         }
 
-        list.innerHTML = patterns.map(pattern => `
-            <div class="admin-list-item">
-                <div class="admin-list-item-info">
-                    <div class="admin-list-item-preview">
-                        <img src="${pattern.image}" alt="${pattern.name}" 
-                             onerror="this.src='${dataManager.getFallbackImage()}'">
+        list.innerHTML = patterns.map(pattern => {
+            // Get color names for this pattern
+            const patternColors = pattern.colors || [];
+            const colorNames = patternColors.map(colorId => {
+                const color = colors.find(c => c.id === colorId);
+                return color ? color.name : colorId;
+            }).join(', ');
+            
+            return `
+                <div class="admin-list-item">
+                    <div class="admin-list-item-info">
+                        <div class="admin-list-item-preview">
+                            <img src="${pattern.image}" alt="${pattern.name}" 
+                                 onerror="this.src='${dataManager.getFallbackImage()}'">
+                        </div>
+                        <div class="admin-list-item-text">
+                            <h4>${pattern.name}</h4>
+                            <p>${pattern.description}</p>
+                            <small class="text-muted">Colors: ${colorNames || 'All colors'}</small>
+                        </div>
                     </div>
-                    <div class="admin-list-item-text">
-                        <h4>${pattern.name}</h4>
-                        <p>${pattern.description}</p>
-                        <small class="text-muted">ID: ${pattern.id}</small>
+                    <div class="admin-card-actions">
+                        <button class="btn btn-secondary btn-sm" onclick="adminPanel.editPattern('${pattern.id}')">
+                            Edit
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="adminPanel.deletePattern('${pattern.id}')">
+                            Delete
+                        </button>
                     </div>
                 </div>
-                <div class="admin-card-actions">
-                    <button class="btn btn-secondary btn-sm" onclick="adminPanel.editPattern('${pattern.id}')">
-                        Edit
-                    </button>
-                    <button class="btn btn-danger btn-sm" onclick="adminPanel.deletePattern('${pattern.id}')">
-                        Delete
-                    </button>
-                </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     }
 
     /**
@@ -134,9 +144,17 @@ class AdminPanel {
             document.getElementById('patternDescription').value = pattern.description;
             document.getElementById('patternImage').value = pattern.image;
             this.previewImage(pattern.image);
+            // Populate available colors
+            if (typeof populatePatternColors === 'function') {
+                populatePatternColors(pattern.colors || []);
+            }
         } else {
             title.textContent = 'Add Pattern';
             document.getElementById('patternId').value = '';
+            // Populate empty colors (all unchecked)
+            if (typeof populatePatternColors === 'function') {
+                populatePatternColors([]);
+            }
         }
         
         modal.classList.add('active');
@@ -162,6 +180,9 @@ class AdminPanel {
         const description = document.getElementById('patternDescription').value.trim();
         const image = document.getElementById('patternImage').value.trim();
         
+        // Get selected colors
+        const colors = typeof getPatternColorsFromForm === 'function' ? getPatternColorsFromForm() : [];
+        
         // Validate image URL (only if provided)
         if (image && !dataManager.isValidImageUrl(image)) {
             uiRenderer.showToast('Please enter a valid image URL', 'error');
@@ -171,12 +192,12 @@ class AdminPanel {
         try {
             if (id) {
                 // Update existing pattern
-                await dataManager.updatePattern(id, { name, description, image });
+                await dataManager.updatePattern(id, { name, description, image, colors });
                 uiRenderer.showToast('Pattern updated successfully!', 'success');
             } else {
                 // Create new pattern
                 const newId = dataManager.generateId('p');
-                await dataManager.addPattern({ id: newId, name, description, image });
+                await dataManager.addPattern({ id: newId, name, description, image, colors });
                 uiRenderer.showToast('Pattern created successfully!', 'success');
             }
             
@@ -185,7 +206,9 @@ class AdminPanel {
             this.closeModal('patternModal');
         } catch (error) {
             console.error('Error saving pattern:', error);
-            uiRenderer.showToast('Failed to save pattern. Please try again.', 'error');
+            // Show more specific error message to user
+            const errorMessage = error.message || 'Failed to save pattern. Please try again.';
+            uiRenderer.showToast(errorMessage, 'error');
         }
     }
 
@@ -202,7 +225,9 @@ class AdminPanel {
                 uiRenderer.showToast('Pattern deleted successfully!', 'success');
             } catch (error) {
                 console.error('Error deleting pattern:', error);
-                uiRenderer.showToast('Failed to delete pattern. Please try again.', 'error');
+                // Show more specific error message to user
+                const errorMessage = error.message || 'Failed to delete pattern. Please try again.';
+                uiRenderer.showToast(errorMessage, 'error');
             }
         }
     }
@@ -326,17 +351,9 @@ class AdminPanel {
             document.getElementById('productImage').value = product.image;
             document.getElementById('productPrice').value = product.price || '';
             this.previewProductImage(product.image);
-            // Populate color images
-            if (typeof populateColorImages === 'function') {
-                populateColorImages(product.colorImages || {});
-            }
         } else {
             title.textContent = 'Add Product';
             document.getElementById('productId').value = '';
-            // Populate empty color images
-            if (typeof populateColorImages === 'function') {
-                populateColorImages({});
-            }
         }
         
         modal.classList.add('active');
@@ -365,32 +382,21 @@ class AdminPanel {
         const image = document.getElementById('productImage').value.trim();
         const price = document.getElementById('productPrice').value.trim();
         
-        // Get color images from form
-        const colorImages = typeof getColorImagesFromForm === 'function' ? getColorImagesFromForm() : {};
-        
         // Validate image URL (only if provided)
         if (image && !dataManager.isValidImageUrl(image)) {
             uiRenderer.showToast('Please enter a valid image URL', 'error');
             return;
         }
         
-        // Validate color image URLs
-        for (const [colorId, url] of Object.entries(colorImages)) {
-            if (url && !dataManager.isValidImageUrl(url)) {
-                uiRenderer.showToast(`Please enter a valid image URL for color ${colorId}`, 'error');
-                return;
-            }
-        }
-        
         try {
             if (id) {
                 // Update existing product
-                await dataManager.updateProduct(id, { patternId, name, type, description, image, price, colorImages });
+                await dataManager.updateProduct(id, { patternId, name, type, description, image, price });
                 uiRenderer.showToast('Product updated successfully!', 'success');
             } else {
                 // Create new product
                 const newId = dataManager.generateId('prod');
-                await dataManager.addProduct({ id: newId, patternId, name, type, description, image, price, colorImages });
+                await dataManager.addProduct({ id: newId, patternId, name, type, description, image, price });
                 uiRenderer.showToast('Product created successfully!', 'success');
             }
             
@@ -398,7 +404,9 @@ class AdminPanel {
             this.closeModal('productModal');
         } catch (error) {
             console.error('Error saving product:', error);
-            uiRenderer.showToast('Failed to save product. Please try again.', 'error');
+            // Show more specific error message to user
+            const errorMessage = error.message || 'Failed to save product. Please try again.';
+            uiRenderer.showToast(errorMessage, 'error');
         }
     }
 
@@ -414,7 +422,9 @@ class AdminPanel {
                 uiRenderer.showToast('Product deleted successfully!', 'success');
             } catch (error) {
                 console.error('Error deleting product:', error);
-                uiRenderer.showToast('Failed to delete product. Please try again.', 'error');
+                // Show more specific error message to user
+                const errorMessage = error.message || 'Failed to delete product. Please try again.';
+                uiRenderer.showToast(errorMessage, 'error');
             }
         }
     }
@@ -452,7 +462,15 @@ class AdminPanel {
 
         const colors = dataManager.getColors();
         
-        if (colors.length === 0) {
+        // Deduplicate colors by ID to prevent display and delete issues
+        const uniqueColors = colors.reduce((acc, color) => {
+            if (!acc.find(c => c.id === color.id)) {
+                acc.push(color);
+            }
+            return acc;
+        }, []);
+        
+        if (uniqueColors.length === 0) {
             list.innerHTML = `
                 <div class="empty-state">
                     <p>No colors yet.</p>
@@ -462,7 +480,7 @@ class AdminPanel {
             return;
         }
 
-        list.innerHTML = colors.map(color => `
+        list.innerHTML = uniqueColors.map(color => `
             <div class="admin-list-item">
                 <div class="admin-list-item-info">
                     ${color.image ? `
@@ -496,13 +514,19 @@ class AdminPanel {
      * @param {string} colorId - Color ID (null for new)
      */
     openColorModal(colorId = null) {
+        console.log('[DEBUG] AdminPanel.openColorModal called with colorId:', colorId);
         const modal = document.getElementById('colorModal');
         const title = document.getElementById('colorModalTitle');
         const form = document.getElementById('colorForm');
         
         form.reset();
-        document.getElementById('colorImagePreview').innerHTML = '';
-        document.getElementById('colorImagePreview').style.display = 'none';
+        
+        // Handle optional image preview element if it exists
+        const imagePreviewEl = document.getElementById('colorImagePreview');
+        if (imagePreviewEl) {
+            imagePreviewEl.innerHTML = '';
+            imagePreviewEl.style.display = 'none';
+        }
         
         if (colorId) {
             const color = dataManager.getColorById(colorId);
@@ -511,9 +535,14 @@ class AdminPanel {
             document.getElementById('colorName').value = color.name;
             document.getElementById('colorHex').value = color.hex;
             document.getElementById('colorDarkHex').value = color.darkHex;
-            document.getElementById('colorImage').value = color.image || '';
-            if (color.image) {
-                this.previewColorImage(color.image);
+            
+            // Handle optional image input if it exists
+            const colorImageInput = document.getElementById('colorImage');
+            if (colorImageInput) {
+                colorImageInput.value = color.image || '';
+                if (color.image) {
+                    this.previewColorImage(color.image);
+                }
             }
         } else {
             title.textContent = 'Add Color';
@@ -531,26 +560,49 @@ class AdminPanel {
         this.openColorModal(id);
     }
 
-    /**
-     * Save color (add or update)
-     * @param {Event} e - Form submit event
-     */
     async saveColor(e) {
         e.preventDefault();
+        
+        // Prevent double submission
+        if (this._isSavingColor) {
+            console.log('[DEBUG] Color save already in progress, ignoring duplicate submit');
+            return;
+        }
+        this._isSavingColor = true;
+        
+        // Disable submit button to prevent double-click
+        const submitBtn = document.querySelector('#colorForm button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving...';
+        }
         
         const id = document.getElementById('colorId').value;
         const name = document.getElementById('colorName').value.trim();
         const hex = document.getElementById('colorHex').value;
         const darkHex = document.getElementById('colorDarkHex').value;
-        const image = document.getElementById('colorImage').value.trim();
+        
+        // Handle optional image field if it exists
+        let image = '';
+        const colorImageInput = document.getElementById('colorImage');
+        if (colorImageInput) {
+            image = colorImageInput.value.trim();
+        }
         
         // Validate image URL (only if provided)
         if (image && !dataManager.isValidImageUrl(image)) {
+            this._isSavingColor = false;
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Save Color';
+            }
             uiRenderer.showToast('Please enter a valid image URL', 'error');
             return;
         }
         
         try {
+            console.log('[DEBUG] Saving color with id:', id, 'name:', name);
+            
             if (id) {
                 // Update existing color
                 await dataManager.updateColor(id, { name, hex, darkHex, image });
@@ -558,6 +610,7 @@ class AdminPanel {
             } else {
                 // Create new color
                 const newId = name.toLowerCase().replace(/\s+/g, '-');
+                console.log('[DEBUG] Creating new color with id:', newId);
                 await dataManager.addColor({ id: newId, name, hex, darkHex, image });
                 uiRenderer.showToast('Color created successfully!', 'success');
             }
@@ -567,6 +620,12 @@ class AdminPanel {
         } catch (error) {
             console.error('Error saving color:', error);
             uiRenderer.showToast('Failed to save color. Please try again.', 'error');
+        } finally {
+            this._isSavingColor = false;
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Save Color';
+            }
         }
     }
     

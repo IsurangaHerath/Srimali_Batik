@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Srimali Batik | Woven with Tradition</title>
+    <title>Srimali Bathik | Handmade Batik Designs with Tradition</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- External CSS -->
     <link rel="stylesheet" href="css/styles.css">
@@ -17,12 +17,12 @@
     <!-- Navigation Bar -->
     <nav class="navbar" id="navbar">
         <div class="logo">
-            <img src="logo 1.png" alt="Srimali batik logo" class="logo-image">
-            <span class="logo-text">Srimali batik</span>
+            <img src="logo 1.png" alt="Srimali Bathik logo" class="logo-image">
+            <span class="logo-text">Srimali Bathik</span>
         </div>
         
         <ul class="nav-links" id="navLinks">
-            <li><a href="#" class="active" data-section="home">Home</a></li>
+            <li><a href="#home" class="active" data-section="home">Home</a></li>
             <li><a href="#designs" data-section="designs">Designs</a></li>
             <li><a href="#about" data-section="about">About</a></li>
             <li><a href="#contact" data-section="contact">Contact</a></li>
@@ -32,12 +32,13 @@
         <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle mobile menu">☰</button>
     </nav>
 
-    <!-- Hero Section -->
-    <section class="hero" id="home">
-        <div class="hero-content">
-            <h1>Woven with <span>Tradition</span></h1>
-            <p>Discover the timeless elegance of authentic Sri Lankan batik. Each piece tells a story of heritage, craftsmanship, and artistic excellence.</p>
-            <a href="#designs" class="hero-btn">Explore Our Designs</a>
+    <!-- Hero Section with Cover Photo -->
+    <section class="hero-new" id="home">
+        <div class="hero-overlay"></div>
+        <div class="hero-content-new">
+            <h1 class="brand-name">Srimali Bathik</h1>
+            <p class="tagline">Handmade Batik Designs with Tradition</p>
+            <a href="#designs" class="cta-button">Explore Designs</a>
         </div>
     </section>
 
@@ -54,6 +55,7 @@
     <!-- Product Detail View -->
     <section class="product-detail" id="productDetail">
         <button class="back-btn" id="backBtn">← Back to Designs</button>
+        <button class="theme-toggle product-theme-toggle" id="productThemeToggle" aria-label="Toggle dark/light mode">🌙</button>
 
         <div class="product-detail-header">
             <h2 id="detailPatternName">Design Name</h2>
@@ -323,6 +325,15 @@
                     <button type="button" class="btn btn-secondary" onclick="closeModal('colorModal')">Cancel</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Lightbox Modal -->
+    <div class="lightbox" id="lightbox">
+        <button class="lightbox-close" id="lightboxClose" aria-label="Close preview">&times;</button>
+        <div class="lightbox-content">
+            <img src="" alt="Full size preview" id="lightboxImage">
+            <div class="lightbox-caption" id="lightboxCaption"></div>
         </div>
     </div>
 

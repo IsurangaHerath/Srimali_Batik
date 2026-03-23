@@ -51,13 +51,20 @@ class App {
         if (savedTheme) {
             document.documentElement.setAttribute('data-theme', savedTheme);
             document.getElementById('themeToggle').textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+            document.getElementById('productThemeToggle').textContent = savedTheme === 'dark' ? '☀️' : '🌙';
         } else if (prefersDark) {
             document.documentElement.setAttribute('data-theme', 'dark');
             document.getElementById('themeToggle').textContent = '☀️';
+            document.getElementById('productThemeToggle').textContent = '☀️';
         }
 
         // Add theme toggle listener
         document.getElementById('themeToggle').addEventListener('click', () => {
+            this.toggleTheme();
+        });
+        
+        // Add product theme toggle listener
+        document.getElementById('productThemeToggle').addEventListener('click', () => {
             this.toggleTheme();
         });
     }
@@ -72,6 +79,7 @@ class App {
         document.documentElement.setAttribute('data-theme', newTheme);
         localStorage.setItem('theme', newTheme);
         document.getElementById('themeToggle').textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        document.getElementById('productThemeToggle').textContent = newTheme === 'dark' ? '☀️' : '🌙';
     }
 
     /**
@@ -108,12 +116,22 @@ class App {
      */
     handleRoute() {
         const hash = window.location.hash;
+        console.log('handleRoute called, hash:', hash);
         const adminPanel = document.getElementById('adminPanel');
         const hero = document.getElementById('home');
         const designsSection = document.getElementById('designs');
         const aboutSection = document.getElementById('about');
         const contactSection = document.getElementById('contact');
         const footer = document.querySelector('.footer');
+        
+        console.log('Elements found:', {
+            adminPanel: !!adminPanel,
+            hero: !!hero,
+            designsSection: !!designsSection,
+            aboutSection: !!aboutSection,
+            contactSection: !!contactSection,
+            footer: !!footer
+        });
 
         if (hash === '#admin' || hash === '/admin') {
             // Show admin panel

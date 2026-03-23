@@ -55,11 +55,14 @@
         
         .password-input-group {
             margin-bottom: 20px;
+            position: relative;
+            display: flex;
+            align-items: center;
         }
         
         .password-input-group input {
             width: 100%;
-            padding: 15px 20px;
+            padding: 15px 50px 15px 20px;
             border: 2px solid rgba(255, 255, 255, 0.2);
             border-radius: 10px;
             background: rgba(255, 255, 255, 0.1);
@@ -67,6 +70,25 @@
             font-size: 1rem;
             transition: all 0.3s ease;
             box-sizing: border-box;
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.3s ease;
+        }
+        
+        .password-toggle:hover {
+            color: #fff;
         }
         
         .password-input-group input:focus {
@@ -128,53 +150,6 @@
         
         .admin-panel.active {
             display: block;
-        }
-        
-        /* Color Images Container */
-        .color-images-container {
-            display: grid;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        
-        .color-image-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-        }
-        
-        .color-chip-small {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-        
-        .color-name-small {
-            min-width: 80px;
-            font-weight: 500;
-        }
-        
-        .color-image-input {
-            flex: 1;
-            padding: 8px 12px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 6px;
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            font-size: 0.9rem;
-        }
-        
-        .color-image-input:focus {
-            outline: none;
-            border-color: #e94560;
-        }
-        
-        .color-image-input::placeholder {
-            color: rgba(255, 255, 255, 0.5);
         }
         
         /* Theme Toggle */
@@ -354,6 +329,14 @@
             color: #212529;
         }
         
+        [data-theme="light"] .password-toggle {
+            color: rgba(0, 0, 0, 0.5);
+        }
+        
+        [data-theme="light"] .password-toggle:hover {
+            color: #212529;
+        }
+        
         [data-theme="light"] .password-input-group input::placeholder {
             color: rgba(0, 0, 0, 0.5);
         }
@@ -469,6 +452,64 @@
         [data-theme="light"] .theme-toggle:hover {
             background: var(--border-color);
         }
+        
+        /* Color Checkbox List */
+        .color-checkbox-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .color-checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .color-checkbox-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .color-checkbox-item.selected {
+            background: rgba(233, 69, 96, 0.2);
+            border-color: #e94560;
+        }
+        
+        .color-checkbox-item input {
+            display: none;
+        }
+        
+        .color-chip {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        
+        .color-label {
+            font-size: 0.9rem;
+        }
+        
+        [data-theme="light"] .color-checkbox-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+        }
+        
+        [data-theme="light"] .color-checkbox-item:hover {
+            background: var(--border-color);
+        }
+        
+        [data-theme="light"] .color-checkbox-item.selected {
+            background: rgba(233, 69, 96, 0.1);
+            border-color: #e94560;
+        }
     </style>
 </head>
 <body>
@@ -480,6 +521,7 @@
             <form id="passwordForm" onsubmit="checkPassword(event)">
                 <div class="password-input-group">
                     <input type="password" id="adminPassword" placeholder="Enter password" required autofocus>
+                    <button type="button" class="password-toggle" id="passwordToggle" onclick="togglePasswordVisibility()" aria-label="Show/Hide password">👁️</button>
                 </div>
                 <button type="submit" class="password-btn">Access Admin Panel</button>
             </form>
@@ -570,6 +612,11 @@
                     <div class="image-preview" id="imagePreview"></div>
                 </div>
                 <div class="form-group">
+                    <label>Available Colors</label>
+                    <small class="text-muted">Select which colors are available for this pattern</small>
+                    <div id="patternColorsContainer" class="color-checkbox-list"></div>
+                </div>
+                <div class="form-group">
                     <button type="submit" class="btn btn-primary">Save Pattern</button>
                     <button type="button" class="btn btn-secondary" onclick="closeModal('patternModal')">Cancel</button>
                 </div>
@@ -623,11 +670,6 @@
                     <input type="text" id="productPrice" placeholder="e.g., 15,000 LKR">
                 </div>
                 <div class="form-group">
-                    <label>Color-Specific Images (Optional)</label>
-                    <small class="text-muted">Add image URLs for each color variant of this product</small>
-                    <div id="colorImagesContainer" class="color-images-container"></div>
-                </div>
-                <div class="form-group">
                     <button type="submit" class="btn btn-primary">Save Product</button>
                     <button type="button" class="btn btn-secondary" onclick="closeModal('productModal')">Cancel</button>
                 </div>
@@ -657,15 +699,6 @@
                         <label>Dark Hex (for gradients)</label>
                         <input type="color" id="colorDarkHex" required value="#1e4d1a">
                     </div>
-                </div>
-                <div class="form-group">
-                    <label>Color Image URL (Optional)</label>
-                    <input type="url" id="colorImage" placeholder="https://example.com/color-image.jpg" oninput="previewColorImage(this.value)">
-                    <small class="text-muted">Paste a cloud image URL for this color variant</small>
-                </div>
-                <div class="form-group">
-                    <label>Image Preview</label>
-                    <div class="image-preview" id="colorImagePreview"></div>
                 </div>
                 <div class="form-group">
                     <button type="submit" class="btn btn-primary">Save Color</button>
@@ -739,6 +772,22 @@
             }
         }
         
+        // Toggle password visibility
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('adminPassword');
+            const toggleButton = document.getElementById('passwordToggle');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleButton.textContent = '🔒';
+                toggleButton.setAttribute('aria-label', 'Hide password');
+            } else {
+                passwordInput.type = 'password';
+                toggleButton.textContent = '👁️';
+                toggleButton.setAttribute('aria-label', 'Show password');
+            }
+        }
+        
         // Global functions for admin panel
         function openPatternModal(patternId = null) {
             adminPanel.openPatternModal(patternId);
@@ -795,31 +844,49 @@
         }
         
         function getColorImagesFromForm() {
-            const colorImages = {};
-            document.querySelectorAll('.color-image-input').forEach(input => {
-                const colorId = input.dataset.colorId;
-                const url = input.value.trim();
-                if (url) {
-                    colorImages[colorId] = url;
-                }
+            return {};
+        }
+        
+        // Pattern color selection
+        function populatePatternColors(selectedColors = []) {
+            const container = document.getElementById('patternColorsContainer');
+            if (!container) return;
+            
+            const colors = dataManager.getColors();
+            container.innerHTML = colors.map(color => `
+                <label class="color-checkbox-item ${selectedColors.includes(color.id) ? 'selected' : ''}" data-color-id="${color.id}">
+                    <input type="checkbox" name="patternColors" value="${color.id}" ${selectedColors.includes(color.id) ? 'checked' : ''}>
+                    <div class="color-chip" style="background-color: ${color.hex};"></div>
+                    <span class="color-label">${color.name}</span>
+                </label>
+            `).join('');
+            
+            // Add click handlers
+            container.querySelectorAll('.color-checkbox-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    if (e.target.tagName !== 'INPUT') {
+                        const checkbox = this.querySelector('input');
+                        checkbox.checked = !checkbox.checked;
+                    }
+                    this.classList.toggle('selected', this.querySelector('input').checked);
+                });
             });
-            return colorImages;
+        }
+        
+        function getPatternColorsFromForm() {
+            const selectedColors = [];
+            document.querySelectorAll('input[name="patternColors"]:checked').forEach(input => {
+                selectedColors.push(input.value);
+            });
+            return selectedColors;
         }
         
         function previewColorImage(url) {
-            const preview = document.getElementById('colorImagePreview');
-            if (!preview) return;
-            
-            if (url && dataManager.isValidImageUrl(url)) {
-                preview.innerHTML = `
-                    <img src="${url}" alt="Color Preview"
-                         onerror="this.parentElement.innerHTML='<p class=\\'error\\'>Failed to load image</p>'">
-                `;
-                preview.style.display = 'block';
-            } else {
-                preview.innerHTML = '';
-                preview.style.display = 'none';
-            }
+            // Color image preview no longer needed - color URL field removed
+        }
+        
+        function populateColorImages(colorImages = {}) {
+            // No longer needed - color images removed from products
         }
         
         // Change password functionality

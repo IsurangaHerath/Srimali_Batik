@@ -56,11 +56,15 @@ router.post('/patterns', async (req, res) => {
         
         res.status(201).json(result.rows[0]);
         
-        // Broadcast to all connected clients
-        broadcastToAll({
-            type: 'pattern_created',
-            data: result.rows[0]
-        });
+        // Broadcast to all connected clients (wrapped in try-catch for serverless compatibility)
+        try {
+            broadcastToAll({
+                type: 'pattern_created',
+                data: result.rows[0]
+            });
+        } catch (e) {
+            console.log('Broadcast skipped in serverless environment');
+        }
     } catch (error) {
         console.error('Error creating pattern:', error);
         if (error.code === '23505') {
@@ -88,11 +92,15 @@ router.put('/patterns/:id', async (req, res) => {
         
         res.json(result.rows[0]);
         
-        // Broadcast to all connected clients
-        broadcastToAll({
-            type: 'pattern_updated',
-            data: result.rows[0]
-        });
+        // Broadcast to all connected clients (wrapped in try-catch for serverless compatibility)
+        try {
+            broadcastToAll({
+                type: 'pattern_updated',
+                data: result.rows[0]
+            });
+        } catch (e) {
+            console.log('Broadcast skipped in serverless environment');
+        }
     } catch (error) {
         console.error('Error updating pattern:', error);
         res.status(500).json({ error: 'Failed to update pattern' });
@@ -101,9 +109,9 @@ router.put('/patterns/:id', async (req, res) => {
 
 // Delete pattern
 router.delete('/patterns/:id', async (req, res) => {
-    const client = await pool.connect();
-    
+    let client;
     try {
+        client = await pool.connect();
         const { id } = req.params;
         
         // Start transaction
@@ -122,14 +130,24 @@ router.delete('/patterns/:id', async (req, res) => {
         
         res.json({ message: 'Pattern deleted successfully', pattern: result.rows[0] });
         
-        // Broadcast to all connected clients
-        broadcastToAll({
-            type: 'pattern_deleted',
-            data: { id }
-        });
+        // Broadcast to all connected clients (wrapped in try-catch for serverless compatibility)
+        try {
+            broadcastToAll({
+                type: 'pattern_deleted',
+                data: { id }
+            });
+        } catch (e) {
+            console.log('Broadcast skipped in serverless environment');
+        }
     } catch (error) {
         // Rollback transaction on error
-        await client.query('ROLLBACK');
+        if (client) {
+            try {
+                await client.query('ROLLBACK');
+            } catch (rbError) {
+                console.error('Rollback failed:', rbError);
+            }
+        }
         console.error('Error deleting pattern:', error);
         res.status(500).json({
             error: 'Failed to delete pattern',
@@ -137,7 +155,9 @@ router.delete('/patterns/:id', async (req, res) => {
             code: error.code
         });
     } finally {
-        client.release();
+        if (client) {
+            client.release();
+        }
     }
 });
 
@@ -201,11 +221,15 @@ router.post('/products', async (req, res) => {
         
         res.status(201).json(result.rows[0]);
         
-        // Broadcast to all connected clients
-        broadcastToAll({
-            type: 'product_created',
-            data: result.rows[0]
-        });
+        // Broadcast to all connected clients (wrapped in try-catch for serverless compatibility)
+        try {
+            broadcastToAll({
+                type: 'product_created',
+                data: result.rows[0]
+            });
+        } catch (e) {
+            console.log('Broadcast skipped in serverless environment');
+        }
     } catch (error) {
         console.error('Error creating product:', error);
         if (error.code === '23505') {
@@ -235,11 +259,15 @@ router.put('/products/:id', async (req, res) => {
         
         res.json(result.rows[0]);
         
-        // Broadcast to all connected clients
-        broadcastToAll({
-            type: 'product_updated',
-            data: result.rows[0]
-        });
+        // Broadcast to all connected clients (wrapped in try-catch for serverless compatibility)
+        try {
+            broadcastToAll({
+                type: 'product_updated',
+                data: result.rows[0]
+            });
+        } catch (e) {
+            console.log('Broadcast skipped in serverless environment');
+        }
     } catch (error) {
         console.error('Error updating product:', error);
         res.status(500).json({ error: 'Failed to update product' });
@@ -259,11 +287,15 @@ router.delete('/products/:id', async (req, res) => {
         
         res.json({ message: 'Product deleted successfully', product: result.rows[0] });
         
-        // Broadcast to all connected clients
-        broadcastToAll({
-            type: 'product_deleted',
-            data: { id }
-        });
+        // Broadcast to all connected clients (wrapped in try-catch for serverless compatibility)
+        try {
+            broadcastToAll({
+                type: 'product_deleted',
+                data: { id }
+            });
+        } catch (e) {
+            console.log('Broadcast skipped in serverless environment');
+        }
     } catch (error) {
         console.error('Error deleting product:', error);
         res.status(500).json({ error: 'Failed to delete product' });
@@ -318,11 +350,15 @@ router.post('/colors', async (req, res) => {
         
         res.status(201).json(result.rows[0]);
         
-        // Broadcast to all connected clients
-        broadcastToAll({
-            type: 'color_created',
-            data: result.rows[0]
-        });
+        // Broadcast to all connected clients (wrapped in try-catch for serverless compatibility)
+        try {
+            broadcastToAll({
+                type: 'color_created',
+                data: result.rows[0]
+            });
+        } catch (e) {
+            console.log('Broadcast skipped in serverless environment');
+        }
     } catch (error) {
         console.error('Error creating color:', error);
         if (error.code === '23505') {
@@ -350,11 +386,15 @@ router.put('/colors/:id', async (req, res) => {
         
         res.json(result.rows[0]);
         
-        // Broadcast to all connected clients
-        broadcastToAll({
-            type: 'color_updated',
-            data: result.rows[0]
-        });
+        // Broadcast to all connected clients (wrapped in try-catch for serverless compatibility)
+        try {
+            broadcastToAll({
+                type: 'color_updated',
+                data: result.rows[0]
+            });
+        } catch (e) {
+            console.log('Broadcast skipped in serverless environment');
+        }
     } catch (error) {
         console.error('Error updating color:', error);
         res.status(500).json({ error: 'Failed to update color' });
@@ -374,11 +414,15 @@ router.delete('/colors/:id', async (req, res) => {
         
         res.json({ message: 'Color deleted successfully', color: result.rows[0] });
         
-        // Broadcast to all connected clients
-        broadcastToAll({
-            type: 'color_deleted',
-            data: { id }
-        });
+        // Broadcast to all connected clients (wrapped in try-catch for serverless compatibility)
+        try {
+            broadcastToAll({
+                type: 'color_deleted',
+                data: { id }
+            });
+        } catch (e) {
+            console.log('Broadcast skipped in serverless environment');
+        }
     } catch (error) {
         console.error('Error deleting color:', error);
         res.status(500).json({ error: 'Failed to delete color' });

@@ -7,7 +7,7 @@ const { Pool } = require('pg');
 
 // Neon PostgreSQL connection configuration
 const pool = new Pool({
-    connectionString: 'postgresql://neondb_owner:npg_yO5WwZTlhgU3@ep-curly-hill-aehfipu7-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require',
+    connectionString: process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_yO5WwZTlhgU3@ep-curly-hill-aehfipu7-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require',
     ssl: {
         rejectUnauthorized: false
     }
@@ -110,9 +110,9 @@ async function insertDefaultData(client) {
             const defaultPatterns = [
                 {
                     id: 'p1',
-                    name: 'Floral Elegance',
-                    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop',
-                    description: 'Handmade floral batik design with intricate patterns'
+                    name: 'Red Labyrinth',
+                    image: 'https://res.cloudinary.com/dpdtltd4f/image/upload/v1774200452/design_pattern_1_jhysuj.png',
+                    description: 'Intricate red labyrinth batik pattern, handcrafted with traditional techniques.'
                 },
                 {
                     id: 'p2',

@@ -25,33 +25,38 @@ const defaultData = {
     patterns: [
         {
             id: 'p1',
-            name: 'Floral Elegance',
-            image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop',
-            description: 'Handmade floral batik design with intricate patterns'
+            name: 'Red Labyrinth',
+            image: 'https://res.cloudinary.com/dpdtltd4f/image/upload/v1774200452/design_pattern_1_jhysuj.png',
+            description: 'Intricate red labyrinth batik pattern, handcrafted with traditional techniques.',
+            colors: ['red', 'blue', 'green', 'purple']
         },
         {
             id: 'p2',
             name: 'Peacock Majesty',
             image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
-            description: 'Majestic peacock inspired traditional Sri Lankan batik'
+            description: 'Majestic peacock inspired traditional Sri Lankan batik',
+            colors: ['blue', 'green', 'gold']
         },
         {
             id: 'p3',
             name: 'Elephant Heritage',
             image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop',
-            description: 'Gentle elephant design representing Sri Lankan culture'
+            description: 'Gentle elephant design representing Sri Lankan culture',
+            colors: ['green', 'gold', 'black']
         },
         {
             id: 'p4',
             name: 'Lotus Serenity',
             image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
-            description: 'Symbol of purity and enlightenment in batik art'
+            description: 'Symbol of purity and enlightenment in batik art',
+            colors: ['purple', 'pink', 'blue']
         },
         {
             id: 'p5',
             name: 'Ocean Waves',
             image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop',
-            description: 'Inspired by the beautiful Indian Ocean waves'
+            description: 'Inspired by the beautiful Indian ocean waves',
+            colors: ['blue', 'green', 'gold']
         }
     ],
     products: [
@@ -62,8 +67,7 @@ const defaultData = {
             type: 'Saree',
             image: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=400&h=300&fit=crop',
             description: 'Beautiful handmade saree with floral batik design',
-            price: '15,000 LKR',
-            colorImages: {}
+            price: '15,000 LKR'
         },
         {
             id: 'prod2',
@@ -72,8 +76,7 @@ const defaultData = {
             type: 'Frock',
             image: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=400&h=300&fit=crop',
             description: 'Elegant frock with traditional floral patterns',
-            price: '8,500 LKR',
-            colorImages: {}
+            price: '8,500 LKR'
         },
         {
             id: 'prod3',
@@ -82,8 +85,7 @@ const defaultData = {
             type: 'Saree',
             image: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=400&h=300&fit=crop',
             description: 'Stunning saree featuring peacock batik design',
-            price: '18,000 LKR',
-            colorImages: {}
+            price: '18,000 LKR'
         },
         {
             id: 'prod4',
@@ -92,17 +94,17 @@ const defaultData = {
             type: 'Sarong',
             image: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=400&h=300&fit=crop',
             description: 'Comfortable sarong with elephant heritage design',
-            price: '4,500 LKR',
-            colorImages: {}
+            price: '4,500 LKR'
         }
     ],
     colors: [
-        { id: 'green', name: 'Green', hex: '#2d5a27', darkHex: '#1e4d1a', image: '' },
-        { id: 'blue', name: 'Blue', hex: '#1e3a5f', darkHex: '#152a45', image: '' },
-        { id: 'red', name: 'Red', hex: '#8b2942', darkHex: '#6d2034', image: '' },
-        { id: 'purple', name: 'Purple', hex: '#4a3068', darkHex: '#3a2552', image: '' },
-        { id: 'gold', name: 'Gold', hex: '#b8860b', darkHex: '#8b6914', image: '' },
-        { id: 'black', name: 'Black', hex: '#2d2d2d', darkHex: '#1a1a1a', image: '' }
+        { id: 'green', name: 'Green', hex: '#2d5a27', darkHex: '#1e4d1a' },
+        { id: 'blue', name: 'Blue', hex: '#1e3a5f', darkHex: '#152a45' },
+        { id: 'red', name: 'Red', hex: '#8b2942', darkHex: '#6d2034' },
+        { id: 'purple', name: 'Purple', hex: '#4a3068', darkHex: '#3a2552' },
+        { id: 'gold', name: 'Gold', hex: '#b8860b', darkHex: '#8b6914' },
+        { id: 'black', name: 'Black', hex: '#2d2d2d', darkHex: '#1a1a1a' },
+        { id: 'pink', name: 'Pink', hex: '#d63384', darkHex: '#a82667' }
     ]
 };
 
@@ -118,6 +120,7 @@ class DataManager {
             colors: []
         };
         this.ws = null;
+        this.dataLoaded = false; // Flag to track data loading status
         this.initWebSocket();
         this.loadData();
     }
@@ -129,6 +132,14 @@ class DataManager {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${protocol}//${window.location.host}`;
         
+        // Only attempt WebSocket if not on Netlify or if we have a real-time server
+        // Netlify Functions don't support persistent WebSockets
+        if (window.location.host.includes('netlify.app')) {
+            console.log('Detected Netlify environment. Using polling for real-time updates instead of WebSockets.');
+            this.initPolling();
+            return;
+        }
+
         this.ws = new WebSocket(wsUrl);
         
         this.ws.onopen = () => {
@@ -151,7 +162,60 @@ class DataManager {
         
         this.ws.onerror = (error) => {
             console.error('WebSocket error:', error);
+            // Fallback to polling on error
+            this.initPolling();
         };
+    }
+
+    /**
+     * Initialize Polling for real-time updates (fallback for Netlify)
+     */
+    initPolling() {
+        if (this.pollingInterval) return;
+        
+        console.log('Initializing data polling (10s interval)');
+        this.pollingInterval = setInterval(() => {
+            this.loadDataSilently();
+        }, 10000);
+    }
+
+    /**
+     * Load data from API without showing full loading state
+     * Compares and updates if changes found
+     */
+    async loadDataSilently() {
+        try {
+            const response = await fetch(`${CONFIG.API_BASE_URL}/all`);
+            if (!response.ok) return;
+            
+            const newData = await response.json();
+            
+            // Basic check if data changed (length check for simplicity)
+            const hasChanged = 
+                newData.patterns?.length !== this.data.patterns.length ||
+                newData.products?.length !== this.data.products.length ||
+                newData.colors?.length !== this.data.colors.length;
+            
+            if (hasChanged) {
+                console.log('Data changes detected via polling, updating UI...');
+                this.data = {
+                    patterns: (newData.patterns && newData.patterns.length > 0) ? newData.patterns : defaultData.patterns,
+                    products: (newData.products && newData.products.length > 0) ? newData.products : defaultData.products,
+                    colors: (newData.colors && newData.colors.length > 0) ? newData.colors : defaultData.colors
+                };
+                
+                // Trigger UI updates
+                if (typeof uiRenderer !== 'undefined' && uiRenderer.renderPatternsGrid) {
+                    uiRenderer.renderPatternsGrid();
+                }
+                if (typeof adminPanel !== 'undefined') {
+                    if (adminPanel.renderProductsList) adminPanel.renderProductsList();
+                    if (adminPanel.renderColorsList) adminPanel.renderColorsList();
+                }
+            }
+        } catch (error) {
+            // Ignore polling errors to avoid console noise
+        }
     }
 
     /**
@@ -204,7 +268,10 @@ class DataManager {
                 }
                 break;
             case 'color_created':
-                this.data.colors.push(message.data);
+                // Check if color already exists to prevent duplicates
+                if (!this.data.colors.find(c => c.id === message.data.id)) {
+                    this.data.colors.push(message.data);
+                }
                 if (typeof adminPanel !== 'undefined') {
                     adminPanel.renderColorsList();
                 }
@@ -245,28 +312,32 @@ class DataManager {
             }
             const data = await response.json();
             this.data = {
-                patterns: data.patterns || [],
-                products: data.products || [],
-                colors: data.colors || []
+                patterns: (data.patterns && data.patterns.length > 0) ? data.patterns : defaultData.patterns,
+                products: (data.products && data.products.length > 0) ? data.products : defaultData.products,
+                colors: (data.colors && data.colors.length > 0) ? data.colors : defaultData.colors
             };
-            console.log('Data loaded from API successfully');
+            this.dataLoaded = true;
         } catch (error) {
             console.error('Error loading data from API:', error);
             // Fallback to default data if API fails
             this.data = defaultData;
+            this.dataLoaded = true;
         }
     }
 
     /**
-     * Save data to API
+     * Save data to API (create or update)
      * @param {string} type - The type of data (patterns, products, colors)
      * @param {Object} data - The data to save
      */
     async saveData(type, data) {
         try {
             let response;
-            if (data.id && this.data[type].find(item => item.id === data.id)) {
+            const isUpdate = data.id && this.data[type].find(item => item.id === data.id);
+            
+            if (isUpdate) {
                 // Update existing item
+                console.log(`Updating ${type}/${data.id}...`);
                 response = await fetch(`${CONFIG.API_BASE_URL}/${type}/${data.id}`, {
                     method: 'PUT',
                     headers: {
@@ -276,6 +347,7 @@ class DataManager {
                 });
             } else {
                 // Create new item
+                console.log(`Creating new ${type}...`);
                 response = await fetch(`${CONFIG.API_BASE_URL}/${type}`, {
                     method: 'POST',
                     headers: {
@@ -285,16 +357,41 @@ class DataManager {
                 });
             }
             
+            const responseData = await response.json().catch(() => ({}));
+            console.log(`Save response status: ${response.status}`, responseData);
+            
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                const errorMessage = errorData.details || errorData.error || `Failed to save ${type} to API`;
+                console.error('Save API error response:', responseData);
+                let errorMessage = `Failed to save ${type}`;
+                if (responseData.details) {
+                    errorMessage = responseData.details;
+                } else if (responseData.error) {
+                    errorMessage = responseData.error;
+                } else if (responseData.message) {
+                    errorMessage = responseData.message;
+                } else if (response.status === 409) {
+                    errorMessage = 'Item with this ID already exists';
+                } else if (response.status === 400) {
+                    errorMessage = 'Invalid request. Please check the data.';
+                } else if (response.status === 404) {
+                    errorMessage = 'Item not found';
+                } else if (response.status === 500) {
+                    errorMessage = 'Server error. Please check database connection.';
+                } else if (response.status === 0) {
+                    errorMessage = 'Network error. Please check if the server is running.';
+                }
                 throw new Error(errorMessage);
             }
             
-            return await response.json();
+            return responseData;
         } catch (error) {
             console.error(`Error saving ${type} to API:`, error);
-            throw error;
+            // Check if it's a network error (TypeError with 'Failed to fetch' or similar)
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                throw new Error('Network error. Please check if the server is running and try again.');
+            }
+            // Re-throw with more context
+            throw new Error(`Error saving ${type}: ${error.message}`);
         }
     }
 
@@ -305,20 +402,49 @@ class DataManager {
      */
     async deleteData(type, id) {
         try {
-            const response = await fetch(`${CONFIG.API_BASE_URL}/${type}/${id}`, {
-                method: 'DELETE'
+            console.log(`Deleting ${type}/${id} from API...`);
+            const url = `${CONFIG.API_BASE_URL}/${type}/${id}`;
+            console.log(`DELETE request URL:`, url);
+            
+            const response = await fetch(url, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
             });
             
+            const responseData = await response.json().catch(() => ({}));
+            console.log(`Delete response status: ${response.status}`, responseData);
+            
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                const errorMessage = errorData.details || errorData.error || `Failed to delete ${type} from API`;
+                console.error('Delete API error response:', responseData);
+                // Provide more detailed error message
+                let errorMessage = `Failed to delete ${type}`;
+                if (responseData.details) {
+                    errorMessage = responseData.details;
+                } else if (responseData.error) {
+                    errorMessage = responseData.error;
+                } else if (responseData.message) {
+                    errorMessage = responseData.message;
+                } else if (response.status === 404) {
+                    errorMessage = `${type.slice(0, -1)} not found`;
+                } else if (response.status === 500) {
+                    errorMessage = 'Server error. Please check database connection.';
+                } else if (response.status === 0) {
+                    errorMessage = 'Network error. Please check if the server is running.';
+                }
                 throw new Error(errorMessage);
             }
             
-            return await response.json();
+            return responseData;
         } catch (error) {
             console.error(`Error deleting ${type} from API:`, error);
-            throw error;
+            // Check if it's a network error (TypeError with 'Failed to fetch' or similar)
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                throw new Error('Network error. Please check if the server is running and try again.');
+            }
+            // Re-throw with more context
+            throw new Error(`Error deleting ${type}: ${error.message}`);
         }
     }
 
@@ -446,7 +572,15 @@ class DataManager {
             if (!product) {
                 throw new Error('Product not found');
             }
+
             const updatedProduct = { ...product, ...updates };
+
+            // Ensure patternId is used for the API call, not pattern_id
+            if (updatedProduct.pattern_id && !updatedProduct.patternId) {
+                updatedProduct.patternId = updatedProduct.pattern_id;
+            }
+            delete updatedProduct.pattern_id;
+
             const result = await this.saveData('products', updatedProduct);
             const index = this.data.products.findIndex(p => p.id === id);
             if (index !== -1) {

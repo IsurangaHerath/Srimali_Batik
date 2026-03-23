@@ -129,7 +129,20 @@ class LazyImageLoader {
         if (img.dataset.src) {
             img.src = img.dataset.src;
             img.removeAttribute('data-src');
-            img.classList.add('loaded');
+            
+            img.onload = () => {
+                img.classList.add('loaded');
+                // Hide skeleton if present as previous sibling
+                const prev = img.previousElementSibling;
+                if (prev && prev.classList.contains('skeleton')) {
+                    prev.style.display = 'none';
+                }
+            };
+
+            // If image is already in cache
+            if (img.complete) {
+                img.onload();
+            }
         }
     }
 
@@ -154,6 +167,51 @@ class UIRenderer {
     constructor() {
         this.currentPattern = null;
         this.selectedColor = null;
+        this.initLightbox();
+    }
+
+    /**
+     * Initialize Lightbox events
+     */
+    initLightbox() {
+        const lightbox = document.getElementById('lightbox');
+        const closeBtn = document.getElementById('lightboxClose');
+        
+        if (!lightbox || !closeBtn) return;
+
+        closeBtn.addEventListener('click', () => {
+            lightbox.classList.remove('active');
+        });
+
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) {
+                lightbox.classList.remove('active');
+            }
+        });
+
+        // Close on ESC key
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && lightbox.classList.contains('active')) {
+                lightbox.classList.remove('active');
+            }
+        });
+    }
+
+    /**
+     * Open Lightbox with specific image
+     * @param {string} src - Image source
+     * @param {string} caption - Image caption
+     */
+    openLightbox(src, caption) {
+        const lightbox = document.getElementById('lightbox');
+        const img = document.getElementById('lightboxImage');
+        const captionElem = document.getElementById('lightboxCaption');
+        
+        if (!lightbox || !img) return;
+
+        img.src = src;
+        captionElem.textContent = caption;
+        lightbox.classList.add('active');
     }
 
     /**
@@ -161,7 +219,15 @@ class UIRenderer {
      */
     renderPatternsGrid() {
         const grid = document.getElementById('patternsGrid');
-        if (!grid) return;
+        if (!grid) {
+            return;
+        }
+
+        // Check if data is loaded
+        if (!dataManager.data || !dataManager.data.patterns) {
+            setTimeout(() => this.renderPatternsGrid(), 500);
+            return;
+        }
 
         const patterns = dataManager.getPatterns();
         
@@ -178,12 +244,10 @@ class UIRenderer {
         grid.innerHTML = patterns.map(pattern => `
             <div class="pattern-card" data-pattern-id="${pattern.id}">
                 <div class="pattern-image-container">
-                    <div class="skeleton skeleton-image"></div>
                     <img 
-                        data-src="${pattern.image}" 
+                        src="${pattern.image}" 
                         alt="${pattern.name}"
-                        class="pattern-image lazy-image"
-                        loading="lazy"
+                        class="pattern-image"
                     >
                 </div>
                 <div class="pattern-info">
@@ -208,8 +272,20 @@ class UIRenderer {
      */
     attachPatternCardListeners() {
         document.querySelectorAll('.pattern-card').forEach(card => {
+            const patternId = card.dataset.patternId;
+            const pattern = dataManager.getPatternById(patternId);
+            
+            // Image click opens lightbox
+            const imgContainer = card.querySelector('.pattern-image-container');
+            if (imgContainer && pattern) {
+                imgContainer.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.openLightbox(pattern.image, pattern.name);
+                });
+            }
+
+            // Card click opens detail view
             card.addEventListener('click', (e) => {
-                const patternId = card.dataset.patternId;
                 this.openProductDetail(patternId);
             });
         });
@@ -237,45 +313,80 @@ class UIRenderer {
      * @param {string} patternId - Pattern ID
      */
     openProductDetail(patternId) {
-        this.currentPattern = dataManager.getPatternById(patternId);
-        this.selectedColor = null;
+        try {
+            this.currentPattern = dataManager.getPatternById(patternId);
+            this.selectedColor = null;
 
-        if (!this.currentPattern) {
-            console.error('Pattern not found:', patternId);
-            return;
+            if (!this.currentPattern) {
+                console.error('Pattern not found:', patternId);
+                return;
+            }
+
+            // Hide other sections with null checks
+            const navbar = document.querySelector('.navbar');
+            const hero = document.querySelector('.hero');
+            const heroNew = document.querySelector('.hero-new');
+            const designs = document.getElementById('designs');
+            const about = document.getElementById('about');
+            const contact = document.getElementById('contact');
+            const footer = document.querySelector('.footer');
+            
+            if (navbar) navbar.style.display = 'none';
+            if (hero) hero.style.display = 'none';
+            if (heroNew) heroNew.style.display = 'none';
+            if (designs) designs.style.display = 'none';
+            if (about) about.style.display = 'none';
+            if (contact) contact.style.display = 'none';
+            if (footer) footer.style.display = 'none';
+
+            // Update detail view
+            const detailPatternName = document.getElementById('detailPatternName');
+            if (detailPatternName) {
+                detailPatternName.textContent = this.currentPattern.name;
+            }
+            
+            // Render pattern preview with lazy loading
+            const previewContainer = document.getElementById('detailPatternPreview');
+            if (previewContainer) {
+                previewContainer.innerHTML = `
+                    <div class="skeleton skeleton-preview"></div>
+                    <img 
+                        data-src="${this.currentPattern.image}" 
+                        alt="${this.currentPattern.name}"
+                        class="detail-pattern-image lazy-image"
+                        loading="lazy"
+                        id="currentDetailImage"
+                    >
+                `;
+                this.initLazyLoading();
+
+                // Add click listener for detail preview
+                setTimeout(() => {
+                    const detailImg = document.getElementById('detailPatternPreview');
+                    if (detailImg) {
+                        detailImg.addEventListener('click', () => {
+                            const img = detailImg.querySelector('img');
+                            if (img && img.src) {
+                                this.openLightbox(img.src, this.currentPattern.name);
+                            }
+                        });
+                    }
+                }, 100);
+
+                // Render color swatches and products
+                this.renderColorSwatches();
+                this.renderProductsGrid();
+
+                // Show product detail section
+                const productDetail = document.getElementById('productDetail');
+                if (productDetail) {
+                    productDetail.classList.add('active');
+                }
+                window.scrollTo(0, 0);
+            }
+        } catch (error) {
+            console.error('Error opening product detail:', error);
         }
-
-        // Hide other sections
-        document.querySelector('.navbar').style.display = 'none';
-        document.querySelector('.hero').style.display = 'none';
-        document.getElementById('designs').style.display = 'none';
-        document.getElementById('about').style.display = 'none';
-        document.getElementById('contact').style.display = 'none';
-        document.querySelector('.footer').style.display = 'none';
-
-        // Update detail view
-        document.getElementById('detailPatternName').textContent = this.currentPattern.name;
-        
-        // Render pattern preview with lazy loading
-        const previewContainer = document.getElementById('detailPatternPreview');
-        previewContainer.innerHTML = `
-            <div class="skeleton skeleton-preview"></div>
-            <img 
-                data-src="${this.currentPattern.image}" 
-                alt="${this.currentPattern.name}"
-                class="detail-pattern-image lazy-image"
-                loading="lazy"
-            >
-        `;
-        this.initLazyLoading();
-
-        // Render color swatches and products
-        this.renderColorSwatches();
-        this.renderProductsGrid();
-
-        // Show product detail section
-        document.getElementById('productDetail').classList.add('active');
-        window.scrollTo(0, 0);
     }
 
     /**
@@ -283,12 +394,24 @@ class UIRenderer {
      */
     closeProductDetail() {
         document.getElementById('productDetail').classList.remove('active');
-        document.querySelector('.navbar').style.display = 'flex';
-        document.querySelector('.hero').style.display = 'flex';
-        document.getElementById('designs').style.display = 'block';
-        document.getElementById('about').style.display = 'block';
-        document.getElementById('contact').style.display = 'block';
-        document.querySelector('.footer').style.display = 'block';
+        
+        // Show other sections with null checks
+        const navbar = document.querySelector('.navbar');
+        const hero = document.querySelector('.hero');
+        const heroNew = document.querySelector('.hero-new');
+        const designs = document.getElementById('designs');
+        const about = document.getElementById('about');
+        const contact = document.getElementById('contact');
+        const footer = document.querySelector('.footer');
+        
+        if (navbar) navbar.style.display = 'flex';
+        if (hero) hero.style.display = 'flex';
+        if (heroNew) heroNew.style.display = 'flex';
+        if (designs) designs.style.display = 'block';
+        if (about) about.style.display = 'block';
+        if (contact) contact.style.display = 'block';
+        if (footer) footer.style.display = 'block';
+        
         this.currentPattern = null;
         this.selectedColor = null;
         window.location.hash = '';
@@ -301,14 +424,19 @@ class UIRenderer {
         const container = document.getElementById('colorSwatches');
         if (!container) return;
 
-        const colors = dataManager.getColors();
+        // Get all colors and filter to only show colors available for this pattern
+        const allColors = dataManager.getColors();
+        const patternColors = this.currentPattern && this.currentPattern.colors ? this.currentPattern.colors : [];
+        const colors = patternColors.length > 0 
+            ? allColors.filter(c => patternColors.includes(c.id)) 
+            : allColors;
         
         container.innerHTML = colors.map(color => `
             <div class="color-swatch"
                  data-color-id="${color.id}"
                  data-color="${color.name}"
-                 style="background-color: ${color.hex}; ${color.image ? `background-image: url(${color.image}); background-size: cover;` : ''}"
-                 title="${color.name}${color.image ? ' (Has custom image)' : ''}">
+                 style="background-color: ${color.hex};"
+                 title="${color.name}">
             </div>
         `).join('');
 
@@ -333,11 +461,8 @@ class UIRenderer {
         
         document.getElementById('selectedColorName').textContent = colorName;
         
-        // Update pattern preview image if color has a custom image
-        this.updatePatternPreviewForColor(colorId);
-        
-        // Re-render products grid to show color-specific images
-        this.renderProductsGrid();
+        // Note: Image no longer changes when selecting a color
+        // Colors are now only for information/selection purposes
     }
     
     /**
@@ -380,7 +505,7 @@ class UIRenderer {
             container.innerHTML = `
                 <div class="empty-state">
                     <p>No products available for this design.</p>
-                    <p>Please add products in the admin panel.</p>
+                    <p>Please add products in the panel.</p>
                 </div>
             `;
             return;
@@ -392,7 +517,7 @@ class UIRenderer {
             
             return `
                 <div class="product-card" data-product-id="${product.id}">
-                    <div class="product-image-container">
+                    <div class="product-image-container" data-product-img="${imageUrl}" data-product-name="${product.name}">
                         <div class="skeleton skeleton-image"></div>
                         <img
                             data-src="${imageUrl}"
@@ -420,6 +545,16 @@ class UIRenderer {
         // Initialize lazy loading
         this.initLazyLoading();
 
+        // Add image click listeners for product cards
+        document.querySelectorAll('.product-image-container').forEach(container => {
+            container.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const imgSrc = container.dataset.productImg;
+                const productName = container.dataset.productName;
+                this.openLightbox(imgSrc, productName);
+            });
+        });
+
         // Add WhatsApp button listeners
         document.querySelectorAll('.whatsapp-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -437,11 +572,7 @@ class UIRenderer {
      * @returns {string} Image URL
      */
     getProductImageForColor(product) {
-        // If a color is selected and product has color-specific image, use it
-        if (this.selectedColor && product.colorImages && product.colorImages[this.selectedColor.id]) {
-            return product.colorImages[this.selectedColor.id];
-        }
-        // Otherwise, use default product image
+        // Return default product image (color-specific images are no longer used)
         return product.image;
     }
 

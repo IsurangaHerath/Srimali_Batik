@@ -88,8 +88,12 @@ async function startServer() {
         
         // Start server
         server.listen(PORT, () => {
-            console.log(`Server running on http://localhost:${PORT}`);
-            console.log(`Admin panel: http://localhost:${PORT}/admin`);
+            console.log('\n========================================');
+            console.log('🚀 Server Ready! Open in your browser:');
+            console.log('========================================');
+            console.log(`   🌐 Main Page:   http://localhost:${PORT}`);
+            console.log(`   📊 Admin Panel: http://localhost:${PORT}/admin`);
+            console.log('========================================\n');
             console.log(`WebSocket server ready for real-time sync`);
         });
     } catch (error) {
