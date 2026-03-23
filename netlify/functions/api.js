@@ -1,7 +1,6 @@
 const express = require('express');
 const serverless = require('serverless-http');
 const cors = require('cors');
-
 // Import database modules
 let pool, initializeDatabase, apiRoutes;
 try {
@@ -56,6 +55,7 @@ app.use(async (req, res, next) => {
     next();
 });
 
+// Mount the API routes
 // Mount the API routes
 // Note: The netlify.toml redirects /api/* to /.netlify/functions/api/:splat
 // So we should mount routes at root level, not at /api

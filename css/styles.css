@@ -58,6 +58,21 @@ body {
     line-height: 1.6;
     transition: background-color 0.4s ease, color 0.4s ease;
     min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* ============================
+   RESPONSIVE IMAGES - Base
+   ============================ */
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Prevent horizontal scrolling on mobile */
+html, .hero-new, .designs-section, .about-section, .contact-section, .footer, .admin-panel, .product-detail {
+    overflow-x: hidden;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -86,6 +101,7 @@ button {
     width: 100%;
     height: 100vh;
     min-height: 600px;
+    max-height: 900px;
     background-image: url('/Cover photo.png');
     background-size: cover;
     background-position: center;
@@ -136,16 +152,18 @@ button {
     text-align: center;
     padding: 20px;
     animation: fadeInUp 1s ease forwards;
+    max-width: 90%;
 }
 
 .brand-name {
     font-family: 'Playfair Display', serif;
-    font-size: 5rem;
+    font-size: clamp(2.5rem, 8vw, 5rem);
     font-weight: 700;
     color: #000000;
     text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.8);
-    letter-spacing: 4px;
+    letter-spacing: clamp(2px, 1vw, 4px);
     margin-bottom: 15px;
+    line-height: 1.2;
 }
 
 [data-theme="dark"] .brand-name {
@@ -155,11 +173,11 @@ button {
 
 .tagline {
     font-family: 'Montserrat', sans-serif;
-    font-size: 1.5rem;
+    font-size: clamp(1rem, 3vw, 1.5rem);
     font-weight: 600;
     color: #000000;
     letter-spacing: 2px;
-    margin-bottom: 40px;
+    margin-bottom: clamp(25px, 5vw, 40px);
 }
 
 [data-theme="dark"] .tagline {
@@ -168,9 +186,9 @@ button {
 
 .cta-button {
     display: inline-block;
-    padding: 18px 45px;
+    padding: clamp(12px, 3vw, 18px) clamp(25px, 5vw, 45px);
     font-family: 'Montserrat', sans-serif;
-    font-size: 1rem;
+    font-size: clamp(0.85rem, 2vw, 1rem);
     font-weight: 500;
     color: #fff;
     background: linear-gradient(135deg, #b8860b 0%, #d4a84b 100%);
@@ -185,6 +203,20 @@ button {
     transform: translateY(-3px);
     box-shadow: 0 8px 30px rgba(184, 134, 11, 0.4);
     background: linear-gradient(135deg, #d4a84b 0%, #b8860b 100%);
+}
+
+/* Tablet hero */
+@media (max-width: 768px) {
+    .hero-new {
+        min-height: 500px;
+    }
+}
+
+/* Mobile hero */
+@media (max-width: 480px) {
+    .hero-new {
+        min-height: 450px;
+    }
 }
 
 /* ============================
@@ -380,6 +412,8 @@ button {
     color: #000000;
     cursor: pointer;
     transition: all 0.3s ease;
+    align-items: center;
+    justify-content: center;
 }
 
 .navbar .mobile-menu-btn:hover {
@@ -388,29 +422,44 @@ button {
     border-color: #b8860b;
 }
 
-/* Mobile menu */
+/* Mobile menu - Tablet and below */
 @media (max-width: 1024px) {
     .navbar {
         padding: 0 30px;
+        height: 70px;
+    }
+    
+    .navbar .logo-image {
+        height: 45px;
+        width: 45px;
+    }
+    
+    .navbar .logo-text {
+        font-size: 1.3rem;
+    }
+    
+    .navbar .theme-toggle {
+        width: 40px;
+        height: 40px;
+        font-size: 1.1rem;
     }
     
     .navbar .nav-links {
         position: fixed;
-        top: 85px;
+        top: 70px;
         left: 0;
         right: 0;
         background: var(--bg-card);
         flex-direction: column;
-        padding: 25px;
+        padding: 20px;
         gap: 0;
-        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
         transform: translateY(-150%);
         opacity: 0;
-        transition: all 0.3s ease;
-    }
-    
-    [data-theme="dark"] .navbar .nav-links {
-        background: var(--bg-card);
+        transition: all 0.35s ease;
+        z-index: 999;
+        max-height: calc(100vh - 70px);
+        overflow-y: auto;
     }
     
     .navbar .nav-links.active {
@@ -420,18 +469,47 @@ button {
     
     .navbar .nav-links li {
         width: 100%;
+        text-align: center;
     }
     
     .navbar .nav-links a {
         display: block;
-        padding: 18px 0;
+        padding: 15px 0;
         border-bottom: 1px solid var(--border-color);
+        font-size: 1.1rem;
     }
     
     .navbar .mobile-menu-btn {
         display: flex;
-        align-items: center;
-        justify-content: center;
+    }
+}
+
+/* Small mobile */
+@media (max-width: 480px) {
+    .navbar {
+        padding: 0 15px;
+    }
+    
+    .navbar .logo-text {
+        font-size: 1.1rem;
+    }
+    
+    .navbar .logo-image {
+        height: 40px;
+        width: 40px;
+        border-width: 2px;
+    }
+    
+    .navbar .theme-toggle {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+    }
+    
+    .navbar .mobile-menu-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 1.3rem;
     }
 }
 
@@ -529,35 +607,37 @@ button {
    DESIGNS SECTION
    ============================ */
 .designs-section {
-    padding: 80px 5%;
+    padding: clamp(40px, 8vw, 80px) 5%;
     background: var(--bg-secondary);
 }
 
 .section-header {
     text-align: center;
-    margin-bottom: 60px;
+    margin-bottom: clamp(30px, 6vw, 60px);
 }
 
 .section-header h2 {
-    font-size: 2.8rem;
+    font-size: clamp(1.8rem, 5vw, 2.8rem);
     margin-bottom: 15px;
     color: var(--text-primary);
 }
 
 .section-header p {
     color: var(--text-secondary);
-    font-size: 1.1rem;
+    font-size: clamp(0.9rem, 2vw, 1.1rem);
     max-width: 600px;
     margin: 0 auto;
+    padding: 0 15px;
 }
 
 .patterns-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(280px, 1fr));
-    gap: 30px;
+    gap: clamp(20px, 4vw, 30px);
     max-width: 1400px;
     margin: 0 auto;
     justify-content: center;
+    padding: 0 10px;
 }
 
 /* Ensure consistent pattern card size regardless of number of patterns */
@@ -587,7 +667,7 @@ button {
 }
 
 .pattern-image-container {
-    height: 200px;
+    height: clamp(150px, 25vw, 200px);
     position: relative;
     overflow: hidden;
     background: var(--bg-secondary);
@@ -607,28 +687,29 @@ button {
 }
 
 .pattern-info {
-    padding: 25px;
+    padding: clamp(15px, 3vw, 25px);
     text-align: center;
 }
 
 .pattern-info h3 {
-    font-size: 1.5rem;
+    font-size: clamp(1.2rem, 2.5vw, 1.5rem);
     margin-bottom: 8px;
     color: var(--text-primary);
 }
 
 .pattern-info p {
     color: var(--text-primary);
-    font-size: 0.9rem;
+    font-size: clamp(0.8rem, 1.5vw, 0.9rem);
     margin-bottom: 20px;
 }
 
 .view-btn {
-    padding: 12px 30px;
+    padding: clamp(10px, 2vw, 12px) clamp(20px, 4vw, 30px);
     background: transparent;
     border: 2px solid var(--accent-primary);
     color: var(--accent-primary);
     font-weight: 600;
+    font-size: clamp(0.8rem, 1.5vw, 0.9rem);
     border-radius: 30px;
     transition: all 0.3s ease;
 }
@@ -638,12 +719,38 @@ button {
     color: #ffffff !important;
 }
 
+/* Tablet responsive for designs */
+@media (max-width: 1024px) {
+    .patterns-grid {
+        grid-template-columns: repeat(3, minmax(250px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .patterns-grid {
+        grid-template-columns: repeat(2, minmax(220px, 1fr));
+        gap: 20px;
+    }
+    
+    .patterns-grid:has(>*:only-child),
+    .patterns-grid:has(>*:nth-child(2):last-child) {
+        grid-template-columns: repeat(2, minmax(220px, 1fr));
+    }
+}
+
+@media (max-width: 480px) {
+    .patterns-grid {
+        grid-template-columns: 1fr;
+        max-width: 320px;
+    }
+}
+
 /* ============================
    PRODUCT DETAIL VIEW
    ============================ */
 .product-detail {
     display: none;
-    padding: 100px 5% 60px;
+    padding: clamp(90px, 15vw, 100px) 5% clamp(40px, 8vw, 60px);
     background: var(--bg-primary);
     min-height: 100vh;
     animation: fadeIn 0.5s ease;
@@ -660,18 +767,18 @@ button {
 
 .back-btn {
     position: fixed;
-    top: 100px;
-    left: 30px;
+    top: clamp(85px, 12vw, 100px);
+    left: clamp(10px, 3vw, 30px);
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 12px 24px;
+    padding: clamp(10px, 2vw, 12px) clamp(15px, 3vw, 24px);
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: 25px;
     color: var(--text-primary);
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: clamp(0.8rem, 1.5vw, 0.95rem);
     box-shadow: 0 4px 15px var(--shadow-color);
     transition: all 0.3s ease;
     z-index: 100;
@@ -686,17 +793,17 @@ button {
 /* Product Theme Toggle */
 .product-theme-toggle {
     position: fixed;
-    top: 100px;
-    right: 30px;
-    width: 50px;
-    height: 50px;
+    top: clamp(85px, 12vw, 100px);
+    right: clamp(10px, 3vw, 30px);
+    width: clamp(40px, 8vw, 50px);
+    height: clamp(40px, 8vw, 50px);
     border-radius: 50%;
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     box-shadow: 0 4px 15px var(--shadow-color);
     z-index: 100;
     cursor: pointer;
-    font-size: 1.4rem;
+    font-size: clamp(1.1rem, 2.5vw, 1.4rem);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -710,18 +817,18 @@ button {
 
 .product-detail-header {
     text-align: center;
-    margin-bottom: 50px;
+    margin-bottom: clamp(30px, 6vw, 50px);
 }
 
 .product-detail-header h2 {
-    font-size: 2.5rem;
+    font-size: clamp(1.5rem, 5vw, 2.5rem);
     margin-bottom: 10px;
     color: var(--text-primary);
 }
 
 .selected-pattern {
-    width: 150px;
-    height: 150px;
+    width: clamp(100px, 20vw, 150px);
+    height: clamp(100px, 20vw, 150px);
     margin: 20px auto 0;
     border-radius: 20px;
     overflow: hidden;
@@ -739,12 +846,12 @@ button {
 
 /* Color Selector */
 .color-selector {
-    margin-bottom: 50px;
+    margin-bottom: clamp(30px, 6vw, 50px);
 }
 
 .color-selector h3 {
     text-align: center;
-    font-size: 1.3rem;
+    font-size: clamp(1.1rem, 2.5vw, 1.3rem);
     margin-bottom: 20px;
     color: var(--text-primary);
 }
@@ -752,13 +859,14 @@ button {
 .color-swatches {
     display: flex;
     justify-content: center;
-    gap: 15px;
+    gap: clamp(10px, 2vw, 15px);
     flex-wrap: wrap;
+    padding: 0 10px;
 }
 
 .color-swatch {
-    width: 50px;
-    height: 50px;
+    width: clamp(40px, 10vw, 50px);
+    height: clamp(40px, 10vw, 50px);
     border-radius: 50%;
     cursor: pointer;
     border: 3px solid transparent;
@@ -800,7 +908,7 @@ button {
 .selected-color-display {
     text-align: center;
     margin-top: 30px;
-    font-size: 1.1rem;
+    font-size: clamp(0.9rem, 2vw, 1.1rem);
     color: var(--text-primary);
 }
 
@@ -813,10 +921,11 @@ button {
 .products-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(280px, 1fr));
-    gap: 30px;
+    gap: clamp(20px, 4vw, 30px);
     max-width: 1200px;
     margin: 0 auto;
     justify-content: center;
+    padding: 0 10px;
 }
 
 /* Ensure consistent card size regardless of number of products */
@@ -842,7 +951,7 @@ button {
 }
 
 .product-image-container {
-    height: 250px;
+    height: clamp(180px, 30vw, 250px);
     position: relative;
     overflow: hidden;
     display: flex;
@@ -877,26 +986,26 @@ button {
 }
 
 .product-info {
-    padding: 25px;
+    padding: clamp(15px, 3vw, 25px);
     text-align: center;
 }
 
 .product-info h4 {
-    font-size: 1.4rem;
+    font-size: clamp(1.1rem, 2.5vw, 1.4rem);
     margin-bottom: 5px;
     color: var(--text-primary);
 }
 
 .product-info p {
     color: var(--text-primary);
-    font-size: 0.9rem;
+    font-size: clamp(0.8rem, 1.5vw, 0.9rem);
     margin-bottom: 10px;
 }
 
 .product-price {
     color: var(--accent-primary);
     font-weight: 600;
-    font-size: 1.1rem;
+    font-size: clamp(0.9rem, 2vw, 1.1rem);
     margin-bottom: 20px;
 }
 
@@ -905,10 +1014,11 @@ button {
     align-items: center;
     justify-content: center;
     gap: 10px;
-    padding: 12px 25px;
+    padding: clamp(10px, 2vw, 12px) clamp(20px, 4vw, 25px);
     background: var(--whatsapp-green);
     color: white;
     font-weight: 600;
+    font-size: clamp(0.85rem, 1.5vw, 0.95rem);
     border-radius: 30px;
     transition: all 0.3s ease;
     width: 100%;
@@ -925,15 +1035,51 @@ button {
 }
 
 .whatsapp-btn svg {
-    width: 20px;
-    height: 20px;
+    width: clamp(16px, 3vw, 20px);
+    height: clamp(16px, 3vw, 20px);
+}
+
+/* Tablet and below - Product detail */
+@media (max-width: 768px) {
+    .product-detail {
+        padding-top: 80px;
+    }
+    
+    .products-grid {
+        grid-template-columns: repeat(2, minmax(200px, 1fr));
+        gap: 15px;
+    }
+    
+    .selected-pattern {
+        width: 120px;
+        height: 120px;
+    }
+}
+
+@media (max-width: 480px) {
+    .products-grid {
+        grid-template-columns: 1fr;
+        max-width: 320px;
+    }
+    
+    .back-btn, .product-theme-toggle {
+        top: 80px;
+    }
+    
+    .back-btn {
+        left: 10px;
+    }
+    
+    .product-theme-toggle {
+        right: 10px;
+    }
 }
 
 /* ============================
    ABOUT SECTION
    ============================ */
 .about-section {
-    padding: 80px 5%;
+    padding: clamp(40px, 8vw, 80px) 5%;
     background: var(--bg-primary);
 }
 
@@ -941,17 +1087,18 @@ button {
     max-width: 900px;
     margin: 0 auto;
     text-align: center;
+    padding: 0 15px;
 }
 
 .about-content h2 {
-    font-size: 2.5rem;
+    font-size: clamp(1.8rem, 5vw, 2.5rem);
     margin-bottom: 25px;
     color: var(--text-primary);
 }
 
 .about-content p {
     color: var(--text-primary);
-    font-size: 1.1rem;
+    font-size: clamp(0.9rem, 2vw, 1.1rem);
     line-height: 1.8;
     margin-bottom: 20px;
 }
@@ -959,42 +1106,45 @@ button {
 .about-features {
     display: flex;
     justify-content: center;
-    gap: 50px;
-    margin-top: 50px;
+    gap: clamp(20px, 5vw, 50px);
+    margin-top: clamp(30px, 6vw, 50px);
     flex-wrap: wrap;
 }
 
 .about-feature {
     text-align: center;
+    flex: 1 1 clamp(150px, 30vw, 250px);
+    max-width: 250px;
 }
 
 .about-feature-icon {
-    width: 70px;
-    height: 70px;
+    width: clamp(50px, 12vw, 70px);
+    height: clamp(50px, 12vw, 70px);
     background: var(--bg-secondary);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0 auto 15px;
-    font-size: 1.8rem;
+    font-size: clamp(1.3rem, 3vw, 1.8rem);
 }
 
 .about-feature h4 {
     color: var(--text-primary);
+    font-size: clamp(1rem, 2vw, 1.2rem);
     margin-bottom: 5px;
 }
 
 .about-feature p {
     color: var(--text-primary);
-    font-size: 0.9rem;
+    font-size: clamp(0.8rem, 1.5vw, 0.9rem);
 }
 
 /* ============================
    CONTACT SECTION
    ============================ */
 .contact-section {
-    padding: 80px 5%;
+    padding: clamp(40px, 8vw, 80px) 5%;
     background: var(--bg-secondary);
 }
 
@@ -1002,24 +1152,25 @@ button {
     max-width: 700px;
     margin: 0 auto;
     text-align: center;
+    padding: 0 15px;
 }
 
 .contact-content h2 {
-    font-size: 2.5rem;
+    font-size: clamp(1.8rem, 5vw, 2.5rem);
     margin-bottom: 25px;
     color: var(--text-primary);
 }
 
 .contact-content p {
     color: var(--text-primary);
-    font-size: 1.1rem;
+    font-size: clamp(0.9rem, 2vw, 1.1rem);
     margin-bottom: 30px;
 }
 
 .contact-info {
     display: flex;
     justify-content: center;
-    gap: 40px;
+    gap: clamp(20px, 5vw, 40px);
     flex-wrap: wrap;
 }
 
@@ -1028,10 +1179,11 @@ button {
     align-items: center;
     gap: 10px;
     color: var(--text-primary);
+    font-size: clamp(0.85rem, 1.5vw, 1rem);
 }
 
 .contact-item span:first-child {
-    font-size: 1.3rem;
+    font-size: clamp(1.1rem, 2.5vw, 1.3rem);
 }
 
 /* ============================
@@ -1039,7 +1191,7 @@ button {
    ============================ */
 .footer {
     background: var(--bg-secondary);
-    padding: 60px 5% 30px;
+    padding: clamp(30px, 6vw, 60px) 5% clamp(20px, 4vw, 30px);
     border-top: 1px solid var(--border-color);
 }
 
@@ -1047,26 +1199,26 @@ button {
     max-width: 1200px;
     margin: 0 auto;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 40px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: clamp(20px, 5vw, 40px);
     margin-bottom: 40px;
 }
 
 .footer-brand h3 {
-    font-size: 1.5rem;
+    font-size: clamp(1.2rem, 3vw, 1.5rem);
     color: var(--accent-primary);
     margin-bottom: 10px;
 }
 
 .footer-brand p {
     color: var(--text-primary);
-    font-size: 0.95rem;
+    font-size: clamp(0.8rem, 1.5vw, 0.95rem);
     line-height: 1.6;
 }
 
 .footer-links h4,
 .footer-social h4 {
-    font-size: 1.1rem;
+    font-size: clamp(0.95rem, 2vw, 1.1rem);
     margin-bottom: 20px;
     color: var(--text-primary);
 }
@@ -1081,6 +1233,7 @@ button {
 
 .footer-links a {
     color: var(--text-primary);
+    font-size: clamp(0.85rem, 1.5vw, 0.95rem);
     transition: color 0.3s ease;
 }
 
@@ -1090,19 +1243,19 @@ button {
 
 .social-icons {
     display: flex;
-    gap: 15px;
+    gap: clamp(10px, 2vw, 15px);
 }
 
 .social-icon {
-    width: 45px;
-    height: 45px;
+    width: clamp(38px, 8vw, 45px);
+    height: clamp(38px, 8vw, 45px);
     background: var(--bg-card);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--text-primary);
-    font-size: 1.2rem;
+    font-size: clamp(1rem, 2vw, 1.2rem);
     transition: all 0.3s ease;
     border: 1px solid var(--border-color);
 }
@@ -1118,7 +1271,7 @@ button {
     padding-top: 30px;
     border-top: 1px solid var(--border-color);
     color: var(--text-primary);
-    font-size: 0.9rem;
+    font-size: clamp(0.75rem, 1.5vw, 0.9rem);
 }
 
 /* ============================
@@ -1127,7 +1280,8 @@ button {
 .admin-panel {
     display: none;
     min-height: 100vh;
-    padding-top: 70px;
+    padding-top: clamp(60px, 10vw, 70px);
+    padding-bottom: 40px;
 }
 
 .admin-panel.active {
@@ -1137,41 +1291,48 @@ button {
 .admin-container {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 30px 5%;
+    padding: clamp(15px, 4vw, 30px) clamp(15px, 4vw, 5%);
 }
 
 .admin-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 40px;
+    margin-bottom: clamp(20px, 5vw, 40px);
+    flex-wrap: wrap;
+    gap: 15px;
 }
 
 .admin-header h1 {
-    font-size: 2.2rem;
+    font-size: clamp(1.5rem, 5vw, 2.2rem);
     color: var(--text-primary);
 }
 
 .admin-actions {
     display: flex;
     gap: 15px;
+    flex-wrap: wrap;
 }
 
 .admin-tabs {
     display: flex;
     gap: 10px;
-    margin-bottom: 30px;
+    margin-bottom: clamp(20px, 5vw, 30px);
     border-bottom: 2px solid var(--border-color);
     padding-bottom: 10px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .admin-tab {
-    padding: 12px 25px;
+    padding: clamp(10px, 2vw, 12px) clamp(15px, 4vw, 25px);
     background: transparent;
     color: var(--text-primary);
     font-weight: 600;
+    font-size: clamp(0.85rem, 1.5vw, 0.95rem);
     border-radius: 8px 8px 0 0;
     transition: all 0.3s ease;
+    white-space: nowrap;
 }
 
 .admin-tab:hover {
@@ -1186,7 +1347,7 @@ button {
 .admin-card {
     background: var(--bg-card);
     border-radius: 15px;
-    padding: 25px;
+    padding: clamp(15px, 4vw, 25px);
     margin-bottom: 20px;
     box-shadow: 0 5px 20px var(--shadow-color);
     border: 1px solid var(--border-color);
@@ -1199,10 +1360,12 @@ button {
     margin-bottom: 20px;
     padding-bottom: 15px;
     border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: 15px;
 }
 
 .admin-card-title {
-    font-size: 1.3rem;
+    font-size: clamp(1.1rem, 2.5vw, 1.3rem);
     color: var(--text-primary);
 }
 
@@ -1239,6 +1402,7 @@ button {
     font-family: 'Lato', sans-serif;
     font-size: 1rem;
     transition: border-color 0.3s ease;
+    width: 100%;
 }
 
 .form-group input:focus,
@@ -1255,14 +1419,15 @@ button {
 
 .form-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 20px;
 }
 
 .btn {
-    padding: 12px 25px;
+    padding: clamp(10px, 2vw, 12px) clamp(18px, 4vw, 25px);
     border-radius: 8px;
     font-weight: 600;
+    font-size: clamp(0.85rem, 1.5vw, 0.95rem);
     transition: all 0.3s ease;
     display: inline-flex;
     align-items: center;
@@ -1332,6 +1497,8 @@ button {
     background: var(--bg-secondary);
     border-radius: 10px;
     transition: all 0.3s ease;
+    flex-wrap: wrap;
+    gap: 15px;
 }
 
 .admin-list-item:hover {
@@ -1342,6 +1509,8 @@ button {
     display: flex;
     align-items: center;
     gap: 15px;
+    flex: 1;
+    min-width: 200px;
 }
 
 .admin-list-item-preview {
@@ -1350,6 +1519,7 @@ button {
     border-radius: 10px;
     overflow: hidden;
     background: var(--bg-card);
+    flex-shrink: 0;
 }
 
 .admin-list-item-preview img {
@@ -1381,6 +1551,46 @@ button {
     height: 25px;
     border-radius: 50%;
     border: 2px solid var(--border-color);
+}
+
+/* Admin Responsive */
+@media (max-width: 768px) {
+    .admin-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .admin-tabs {
+        justify-content: center;
+    }
+    
+    .admin-list-item {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .admin-list-item-info {
+        flex-direction: column;
+    }
+    
+    .admin-card-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-panel {
+        padding-top: 60px;
+    }
+    
+    .admin-container {
+        padding: 15px;
+    }
 }
 
 /* Image Preview */
@@ -1417,7 +1627,7 @@ button {
     z-index: 2000;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: clamp(10px, 4vw, 20px);
 }
 
 .modal.active {
@@ -1426,12 +1636,12 @@ button {
 
 .modal-content {
     background: var(--bg-card);
-    border-radius: 20px;
+    border-radius: clamp(12px, 3vw, 20px);
     max-width: 600px;
     width: 100%;
     max-height: 90vh;
     overflow-y: auto;
-    padding: 30px;
+    padding: clamp(15px, 4vw, 30px);
     position: relative;
 }
 
@@ -1439,23 +1649,25 @@ button {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 25px;
+    margin-bottom: clamp(15px, 4vw, 25px);
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .modal-header h2 {
-    font-size: 1.5rem;
+    font-size: clamp(1.2rem, 3vw, 1.5rem);
     color: var(--text-primary);
 }
 
 .modal-close {
-    width: 35px;
-    height: 35px;
+    width: clamp(30px, 6vw, 35px);
+    height: clamp(30px, 6vw, 35px);
     border-radius: 50%;
     background: var(--bg-secondary);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
+    font-size: clamp(1rem, 2.5vw, 1.2rem);
     color: var(--text-primary);
     transition: all 0.3s ease;
 }
@@ -1468,19 +1680,21 @@ button {
 /* Toast Notifications */
 .toast-container {
     position: fixed;
-    top: 90px;
-    right: 20px;
+    top: clamp(80px, 12vw, 90px);
+    right: clamp(10px, 3vw, 20px);
     z-index: 3000;
     display: flex;
     flex-direction: column;
     gap: 10px;
+    max-width: calc(100vw - 40px);
 }
 
 .toast {
-    padding: 15px 25px;
+    padding: clamp(12px, 3vw, 15px) clamp(18px, 4vw, 25px);
     border-radius: 10px;
     color: white;
     font-weight: 500;
+    font-size: clamp(0.85rem, 1.5vw, 0.95rem);
     animation: slideIn 0.3s ease;
     display: flex;
     align-items: center;
@@ -1580,45 +1794,218 @@ button {
 }
 
 /* ============================
-   RESPONSIVE DESIGN
+   RESPONSIVE DESIGN - Comprehensive
    ============================ */
+
+/* Tablet: 768px and below */
 @media (max-width: 768px) {
-    .navbar { padding: 0 20px; }
-    .nav-links {
-        display: none;
-        position: absolute;
-        top: 70px;
-        left: 0;
-        right: 0;
-        background: var(--bg-navbar);
-        flex-direction: column;
-        padding: 20px;
-        gap: 15px;
-        box-shadow: 0 10px 30px var(--shadow-color);
+    .hero-new {
+        min-height: 500px;
     }
-    .nav-links.active { display: flex; }
-    .mobile-menu-btn { display: block; }
-    .hero h1 { font-size: 2.5rem; }
-    .hero p { font-size: 1.1rem; }
-    .section-header h2 { font-size: 2rem; }
-    .patterns-grid { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
-    .product-detail-header h2 { font-size: 1.8rem; }
-    .products-grid { grid-template-columns: 1fr; }
-    .about-features { gap: 30px; }
-    .contact-info { flex-direction: column; align-items: center; }
-    .footer-content { text-align: center; }
-    .social-icons { justify-content: center; }
-    .admin-header { flex-direction: column; gap: 20px; text-align: center; }
-    .admin-tabs { flex-wrap: wrap; justify-content: center; }
-    .admin-list-item { flex-direction: column; gap: 15px; text-align: center; }
-    .admin-list-item-info { flex-direction: column; }
+    
+    .brand-name {
+        font-size: clamp(2rem, 7vw, 3rem);
+    }
+    
+    .tagline {
+        font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+    }
+    
+    .cta-button {
+        padding: clamp(12px, 3vw, 16px) clamp(25px, 5vw, 35px);
+    }
+    
+    .section-header h2 {
+        font-size: clamp(1.6rem, 5vw, 2rem);
+    }
+    
+    .section-header p {
+        padding: 0 10px;
+    }
+    
+    .patterns-grid {
+        grid-template-columns: repeat(2, minmax(200px, 1fr));
+        gap: 15px;
+    }
+    
+    .products-grid {
+        grid-template-columns: repeat(2, minmax(200px, 1fr));
+        gap: 15px;
+    }
+    
+    .about-features {
+        gap: 25px;
+    }
+    
+    .contact-info {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .footer-content {
+        text-align: center;
+    }
+    
+    .social-icons {
+        justify-content: center;
+    }
+    
+    .admin-header {
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+    }
+    
+    .admin-tabs {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .admin-list-item {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .admin-list-item-info {
+        flex-direction: column;
+    }
+    
+    .back-btn, .product-theme-toggle {
+        top: 85px;
+    }
+    
+    .product-detail {
+        padding-top: 85px;
+    }
 }
 
+/* Mobile: 480px and below */
 @media (max-width: 480px) {
-    .logo-text { font-size: 1.2rem; }
-    .hero h1 { font-size: 2rem; }
-    .color-swatches { gap: 10px; }
-    .color-swatch { width: 40px; height: 40px; }
+    .navbar {
+        padding: 0 15px;
+        height: 65px;
+    }
+    
+    .navbar .logo-image {
+        height: 38px;
+        width: 38px;
+    }
+    
+    .navbar .logo-text {
+        font-size: 1rem;
+    }
+    
+    .navbar .theme-toggle {
+        width: 34px;
+        height: 34px;
+    }
+    
+    .navbar .mobile-menu-btn {
+        width: 34px;
+        height: 34px;
+    }
+    
+    .navbar .nav-links {
+        top: 65px;
+    }
+    
+    .hero-new {
+        min-height: 400px;
+    }
+    
+    .brand-name {
+        font-size: 2rem;
+    }
+    
+    .tagline {
+        font-size: 0.9rem;
+    }
+    
+    .cta-button {
+        padding: 12px 28px;
+        font-size: 0.85rem;
+    }
+    
+    .section-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .section-header p {
+        font-size: 0.85rem;
+    }
+    
+    .patterns-grid, 
+    .products-grid {
+        grid-template-columns: 1fr;
+        max-width: 300px;
+    }
+    
+    .color-swatches {
+        gap: 8px;
+    }
+    
+    .color-swatch {
+        width: 38px;
+        height: 38px;
+    }
+    
+    .contact-item {
+        font-size: 0.9rem;
+    }
+    
+    .footer-brand h3 {
+        font-size: 1.2rem;
+    }
+    
+    .social-icon {
+        width: 38px;
+        height: 38px;
+    }
+    
+    .back-btn, .product-theme-toggle {
+        top: 75px;
+    }
+    
+    .back-btn {
+        left: 8px;
+        padding: 8px 14px;
+        font-size: 0.8rem;
+    }
+    
+    .product-theme-toggle {
+        right: 8px;
+        width: 36px;
+        height: 36px;
+    }
+    
+    .product-detail-header h2 {
+        font-size: 1.4rem;
+    }
+    
+    .scroll-top {
+        bottom: 15px;
+        right: 15px;
+        width: 40px;
+        height: 40px;
+    }
+    
+    .modal-content {
+        padding: 15px;
+    }
+    
+    .admin-container {
+        padding: 10px;
+    }
+    
+    .admin-tabs {
+        gap: 5px;
+    }
+    
+    .admin-tab {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
 }
 
 /* ============================
@@ -1636,7 +2023,7 @@ button {
     z-index: 3000;
     align-items: center;
     justify-content: center;
-    padding: 40px;
+    padding: clamp(15px, 5vw, 40px);
     opacity: 0;
     transition: opacity 0.3s ease;
 }
@@ -1673,30 +2060,59 @@ button {
     margin-top: 20px;
     color: white;
     font-family: 'Playfair Display', serif;
-    font-size: 1.5rem;
+    font-size: clamp(1.1rem, 3vw, 1.5rem);
     text-align: center;
 }
 
 .lightbox-close {
     position: absolute;
-    top: 30px;
-    right: 30px;
-    width: 50px;
-    height: 50px;
+    top: clamp(10px, 4vw, 30px);
+    right: clamp(10px, 4vw, 30px);
+    width: clamp(35px, 8vw, 50px);
+    height: clamp(35px, 8vw, 50px);
     background: rgba(255, 255, 255, 0.1);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    font-size: 2rem;
+    font-size: clamp(1.3rem, 4vw, 2rem);
     transition: all 0.3s ease;
     border: 1px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
 }
 
 .lightbox-close:hover {
     background: var(--danger);
     transform: rotate(90deg);
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+    .btn, 
+    .view-btn, 
+    .whatsapp-btn,
+    .theme-toggle,
+    .mobile-menu-btn,
+    .back-btn,
+    .product-theme-toggle,
+    .scroll-top,
+    .lightbox-close {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    .color-swatch {
+        min-width: 44px;
+        min-height: 44px;
+    }
+    
+    .nav-links a {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 }
 
 /* ============================
