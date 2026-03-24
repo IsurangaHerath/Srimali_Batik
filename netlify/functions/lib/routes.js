@@ -419,11 +419,37 @@ router.delete('/colors/:id', async (req, res) => {
 // Get all data (patterns, products, colors) in one request
 router.get('/all', async (req, res) => {
     try {
-        const [patternsResult, productsResult, colorsResult] = await Promise.all([
-            pool.query('SELECT * FROM patterns ORDER BY created_at DESC'),
-            pool.query('SELECT * FROM products ORDER BY created_at DESC'),
-            pool.query('SELECT * FROM colors ORDER BY created_at DESC')
-        ]);
+        console.log('[API] Fetching all data...');
+        
+        // Check if we can even talk to the DB
+        if (!process.env.DATABASE_URL) {
+            throw new Error('DATABASE_URL is not configured in Netlify');
+        }
+
+        const fetchAll = async () => {
+            return await Promise.all([
+                pool.query('SELECT * FROM patterns ORDER BY created_at DESC'),
+                pool.query('SELECT * FROM products ORDER BY created_at DESC'),
+                pool.query('SELECT * FROM colors ORDER BY created_at DESC')
+            ]);
+        };
+
+        let results;
+        try {
+            results = await fetchAll();
+        } catch (queryError) {
+            // If it's a "table does not exist" error, try to initialize once
+            if (queryError.message.includes('does not exist')) {
+                console.log('[API] Tables missing, auto-initializing...');
+                const { initializeDatabase } = require('./db');
+                await initializeDatabase();
+                results = await fetchAll();
+            } else {
+                throw queryError;
+            }
+        }
+        
+        const [patternsResult, productsResult, colorsResult] = results;
         
         res.json({
             patterns: patternsResult.rows,
@@ -431,8 +457,12 @@ router.get('/all', async (req, res) => {
             colors: colorsResult.rows
         });
     } catch (error) {
-        console.error('Error fetching all data:', error);
-        res.status(500).json({ error: 'Failed to fetch data' });
+        console.error('CRITICAL: Error fetching all data:', error);
+        res.status(500).json({ 
+            error: 'Database connection failed', 
+            details: error.message,
+            tip: 'Check your DATABASE_URL and Neon IP restrictions'
+        });
     }
 });
 
