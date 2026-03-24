@@ -39,8 +39,21 @@
 }
 
 /* ============================
-   RESET & BASE STYLES
+   BODY STATES
    ============================ */
+body.detail-view-active .navbar,
+body.detail-view-active .hero,
+body.detail-view-active .hero-new,
+body.detail-view-active .designs-section,
+body.detail-view-active .about-section,
+body.detail-view-active .contact-section,
+body.detail-view-active .footer {
+    display: none !important;
+}
+
+body.detail-view-active {
+    background-color: var(--bg-primary);
+}
 * {
     margin: 0;
     padding: 0;
@@ -1938,7 +1951,6 @@ button {
     .patterns-grid, 
     .products-grid {
         grid-template-columns: 1fr;
-        max-width: 300px;
     }
     
     .color-swatches {

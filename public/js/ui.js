@@ -17,15 +17,24 @@ const UIUtils = {
      */
     createLazyImage(src, alt, className = '') {
         const img = document.createElement('img');
-        img.dataset.src = src;
+        const fallback = dataManager.getFallbackImage();
+        
+        img.dataset.src = src || fallback;
         img.alt = alt;
         img.className = `lazy-image ${className}`;
         img.loading = 'lazy';
         
+        // Add skeleton loader as sibling
+        const container = document.createElement('div');
+        container.className = 'skeleton-container';
+        
         // Add error handler for broken images
         img.onerror = function() {
-            this.src = dataManager.getFallbackImage();
-            this.classList.add('image-error');
+            if (this.src !== fallback) {
+                console.warn(`Failed to load image: ${this.src}, using fallback`);
+                this.src = fallback;
+                this.classList.add('image-error');
+            }
         };
         
         return img;
@@ -127,10 +136,11 @@ class LazyImageLoader {
      */
     loadImage(img) {
         if (img.dataset.src) {
-            img.src = img.dataset.src;
+            const src = img.dataset.src;
+            img.src = src;
             img.removeAttribute('data-src');
             
-            img.onload = () => {
+            const handleLoad = () => {
                 img.classList.add('loaded');
                 // Hide skeleton if present as previous sibling
                 const prev = img.previousElementSibling;
@@ -139,9 +149,22 @@ class LazyImageLoader {
                 }
             };
 
+            img.onload = handleLoad;
+
+            img.onerror = () => {
+                console.warn(`Failed to load image: ${src}`);
+                img.src = dataManager.getFallbackImage();
+                img.classList.add('loaded', 'image-error');
+                
+                const prev = img.previousElementSibling;
+                if (prev && prev.classList.contains('skeleton')) {
+                    prev.style.display = 'none';
+                }
+            };
+
             // If image is already in cache
             if (img.complete) {
-                img.onload();
+                handleLoad();
             }
         }
     }
@@ -244,10 +267,12 @@ class UIRenderer {
         grid.innerHTML = patterns.map(pattern => `
             <div class="pattern-card" data-pattern-id="${pattern.id}">
                 <div class="pattern-image-container">
+                    <div class="skeleton skeleton-image"></div>
                     <img 
-                        src="${pattern.image}" 
+                        data-src="${pattern.image}" 
                         alt="${pattern.name}"
-                        class="pattern-image"
+                        class="pattern-image lazy-image"
+                        loading="lazy"
                     >
                 </div>
                 <div class="pattern-info">
@@ -322,22 +347,8 @@ class UIRenderer {
                 return;
             }
 
-            // Hide other sections with null checks
-            const navbar = document.querySelector('.navbar');
-            const hero = document.querySelector('.hero');
-            const heroNew = document.querySelector('.hero-new');
-            const designs = document.getElementById('designs');
-            const about = document.getElementById('about');
-            const contact = document.getElementById('contact');
-            const footer = document.querySelector('.footer');
-            
-            if (navbar) navbar.style.display = 'none';
-            if (hero) hero.style.display = 'none';
-            if (heroNew) heroNew.style.display = 'none';
-            if (designs) designs.style.display = 'none';
-            if (about) about.style.display = 'none';
-            if (contact) contact.style.display = 'none';
-            if (footer) footer.style.display = 'none';
+            // Hide other sections using body class
+            document.body.classList.add('detail-view-active');
 
             // Update detail view
             const detailPatternName = document.getElementById('detailPatternName');
@@ -394,23 +405,7 @@ class UIRenderer {
      */
     closeProductDetail() {
         document.getElementById('productDetail').classList.remove('active');
-        
-        // Show other sections with null checks
-        const navbar = document.querySelector('.navbar');
-        const hero = document.querySelector('.hero');
-        const heroNew = document.querySelector('.hero-new');
-        const designs = document.getElementById('designs');
-        const about = document.getElementById('about');
-        const contact = document.getElementById('contact');
-        const footer = document.querySelector('.footer');
-        
-        if (navbar) navbar.style.display = 'flex';
-        if (hero) hero.style.display = 'flex';
-        if (heroNew) heroNew.style.display = 'flex';
-        if (designs) designs.style.display = 'block';
-        if (about) about.style.display = 'block';
-        if (contact) contact.style.display = 'block';
-        if (footer) footer.style.display = 'block';
+        document.body.classList.remove('detail-view-active');
         
         this.currentPattern = null;
         this.selectedColor = null;

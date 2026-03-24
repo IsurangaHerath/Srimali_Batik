@@ -43,15 +43,15 @@ router.get('/patterns/:id', async (req, res) => {
 // Create new pattern
 router.post('/patterns', async (req, res) => {
     try {
-        const { id, name, description, image } = req.body;
+        const { id, name, description, image, colors } = req.body;
         
         if (!id || !name) {
             return res.status(400).json({ error: 'ID and name are required' });
         }
         
         const result = await pool.query(
-            'INSERT INTO patterns (id, name, description, image) VALUES ($1, $2, $3, $4) RETURNING *',
-            [id, name, description || '', image || '']
+            'INSERT INTO patterns (id, name, description, image, colors) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [id, name, description || '', image || '', JSON.stringify(colors || [])]
         );
         
         res.status(201).json(result.rows[0]);
@@ -79,11 +79,11 @@ router.post('/patterns', async (req, res) => {
 router.put('/patterns/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, description, image } = req.body;
+        const { name, description, image, colors } = req.body;
         
         const result = await pool.query(
-            'UPDATE patterns SET name = $1, description = $2, image = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $4 RETURNING *',
-            [name, description, image, id]
+            'UPDATE patterns SET name = $1, description = $2, image = $3, colors = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5 RETURNING *',
+            [name, description, image, JSON.stringify(colors || []), id]
         );
         
         if (result.rows.length === 0) {

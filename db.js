@@ -1,16 +1,24 @@
 /**
  * Database Connection and Schema Setup for Neon PostgreSQL
  * Handles connection to Neon database and initializes tables
+ * Updated to use @neondatabase/serverless for better serverless compatibility
  */
 
-const { Pool } = require('pg');
+const { Pool, neonConfig } = require('@neondatabase/serverless');
+const ws = require('ws');
+
+// Configure neonConfig to use WebSockets for better compatibility in serverless
+neonConfig.webSocketConstructor = ws;
+
+// Check for DATABASE_URL
+if (!process.env.DATABASE_URL) {
+    console.warn('WARNING: DATABASE_URL is not set in environment variables');
+}
 
 // Neon PostgreSQL connection configuration
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_yO5WwZTlhgU3@ep-curly-hill-aehfipu7-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require',
-    ssl: {
-        rejectUnauthorized: false
-    }
+    connectionString: process.env.DATABASE_URL,
+    ssl: true // Neon requires SSL
 });
 
 // Test database connection
@@ -19,8 +27,7 @@ pool.on('connect', () => {
 });
 
 pool.on('error', (err) => {
-    console.error('Unexpected error on idle client', err);
-    process.exit(-1);
+    console.error('Unexpected error on idle database client', err);
 });
 
 /**
@@ -28,9 +35,13 @@ pool.on('error', (err) => {
  * Creates tables for patterns, products, and colors if they don't exist
  */
 async function initializeDatabase() {
-    const client = await pool.connect();
+    console.log('Starting database schema initialization...');
+    let client;
     
     try {
+        client = await pool.connect();
+        console.log('Successfully connected to database for initialization');
+        
         // Start transaction
         await client.query('BEGIN');
         
@@ -41,10 +52,22 @@ async function initializeDatabase() {
                 name VARCHAR(255) NOT NULL,
                 description TEXT,
                 image TEXT,
+                colors JSONB DEFAULT '[]',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+        
+        // Add colors column if it doesn't exist (for existing databases)
+        try {
+            await client.query(`
+                ALTER TABLE patterns ADD COLUMN IF NOT EXISTS colors JSONB DEFAULT '[]'
+            `);
+            console.log('Ensured colors column exists in patterns table');
+        } catch (e) {
+            // Column may already exist, ignore error
+            console.log('Colors column check completed');
+        }
         
         // Create products table
         await client.query(`
@@ -90,11 +113,17 @@ async function initializeDatabase() {
         await insertDefaultData(client);
         
     } catch (error) {
-        await client.query('ROLLBACK');
+        if (client) {
+            try {
+                await client.query('ROLLBACK');
+            } catch (rbError) {
+                console.error('Rollback failed:', rbError);
+            }
+        }
         console.error('Error initializing database schema:', error);
         throw error;
     } finally {
-        client.release();
+        if (client) client.release();
     }
 }
 
@@ -112,38 +141,43 @@ async function insertDefaultData(client) {
                     id: 'p1',
                     name: 'Red Labyrinth',
                     image: 'https://res.cloudinary.com/dpdtltd4f/image/upload/v1774200452/design_pattern_1_jhysuj.png',
-                    description: 'Intricate red labyrinth batik pattern, handcrafted with traditional techniques.'
+                    description: 'Intricate red labyrinth batik pattern, handcrafted with traditional techniques.',
+                    colors: JSON.stringify(['red', 'blue', 'green', 'purple'])
                 },
                 {
                     id: 'p2',
                     name: 'Peacock Majesty',
                     image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
-                    description: 'Majestic peacock inspired traditional Sri Lankan batik'
+                    description: 'Majestic peacock inspired traditional Sri Lankan batik',
+                    colors: JSON.stringify(['blue', 'green', 'gold'])
                 },
                 {
                     id: 'p3',
                     name: 'Elephant Heritage',
                     image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop',
-                    description: 'Gentle elephant design representing Sri Lankan culture'
+                    description: 'Gentle elephant design representing Sri Lankan culture',
+                    colors: JSON.stringify(['green', 'gold', 'black'])
                 },
                 {
                     id: 'p4',
                     name: 'Lotus Serenity',
                     image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
-                    description: 'Symbol of purity and enlightenment in batik art'
+                    description: 'Symbol of purity and enlightenment in batik art',
+                    colors: JSON.stringify(['purple', 'blue'])
                 },
                 {
                     id: 'p5',
                     name: 'Ocean Waves',
                     image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop',
-                    description: 'Inspired by the beautiful Indian Ocean waves'
+                    description: 'Inspired by the beautiful Indian Ocean waves',
+                    colors: JSON.stringify(['blue', 'green', 'gold'])
                 }
             ];
             
             for (const pattern of defaultPatterns) {
                 await client.query(
-                    'INSERT INTO patterns (id, name, description, image) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING',
-                    [pattern.id, pattern.name, pattern.description, pattern.image]
+                    'INSERT INTO patterns (id, name, description, image, colors) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING',
+                    [pattern.id, pattern.name, pattern.description, pattern.image, pattern.colors]
                 );
             }
         }

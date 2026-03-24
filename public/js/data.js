@@ -225,7 +225,15 @@ class DataManager {
     handleWebSocketMessage(message) {
         switch (message.type) {
             case 'pattern_created':
-                this.data.patterns.push(message.data);
+                console.log('[DEBUG] WebSocket pattern_created received for:', message.data.id);
+                // Check if pattern already exists to prevent duplicates
+                const existingPatternIndex = this.data.patterns.findIndex(p => p.id === message.data.id);
+                if (existingPatternIndex === -1) {
+                    console.log('[DEBUG] Pattern not in local array, adding from WebSocket');
+                    this.data.patterns.push(message.data);
+                } else {
+                    console.log('[DEBUG] Pattern already exists in local array, skipping WebSocket add');
+                }
                 if (typeof uiRenderer !== 'undefined') {
                     uiRenderer.renderPatternsGrid();
                 }
@@ -240,14 +248,31 @@ class DataManager {
                 }
                 break;
             case 'pattern_deleted':
-                this.data.patterns = this.data.patterns.filter(p => p.id !== message.data.id);
-                this.data.products = this.data.products.filter(p => p.pattern_id !== message.data.id);
+                console.log('[DEBUG] WebSocket pattern_deleted received for:', message.data.id);
+                // Check if pattern exists before trying to delete (prevents double delete)
+                const patternToDelete = this.data.patterns.find(p => p.id === message.data.id);
+                if (patternToDelete) {
+                    console.log('[DEBUG] Pattern exists in local array, deleting from WebSocket');
+                    this.data.patterns = this.data.patterns.filter(p => p.id !== message.data.id);
+                    this.data.products = this.data.products.filter(p => p.pattern_id !== message.data.id);
+                    console.log('[DEBUG] Patterns after WebSocket delete:', this.data.patterns.map(p => p.id));
+                } else {
+                    console.log('[DEBUG] Pattern already deleted, skipping WebSocket delete');
+                }
                 if (typeof uiRenderer !== 'undefined') {
                     uiRenderer.renderPatternsGrid();
                 }
                 break;
             case 'product_created':
-                this.data.products.push(message.data);
+                console.log('[DEBUG] WebSocket product_created received for:', message.data.id);
+                // Check if product already exists to prevent duplicates
+                const existingProductIndex = this.data.products.findIndex(p => p.id === message.data.id);
+                if (existingProductIndex === -1) {
+                    console.log('[DEBUG] Product not in local array, adding from WebSocket');
+                    this.data.products.push(message.data);
+                } else {
+                    console.log('[DEBUG] Product already exists in local array, skipping WebSocket add');
+                }
                 if (typeof adminPanel !== 'undefined') {
                     adminPanel.renderProductsList();
                 }
@@ -262,7 +287,16 @@ class DataManager {
                 }
                 break;
             case 'product_deleted':
-                this.data.products = this.data.products.filter(p => p.id !== message.data.id);
+                console.log('[DEBUG] WebSocket product_deleted received for:', message.data.id);
+                // Check if product exists before trying to delete (prevents double delete)
+                const productToDelete = this.data.products.find(p => p.id === message.data.id);
+                if (productToDelete) {
+                    console.log('[DEBUG] Product exists in local array, deleting from WebSocket');
+                    this.data.products = this.data.products.filter(p => p.id !== message.data.id);
+                    console.log('[DEBUG] Products after WebSocket delete:', this.data.products.map(p => p.id));
+                } else {
+                    console.log('[DEBUG] Product already deleted, skipping WebSocket delete');
+                }
                 if (typeof adminPanel !== 'undefined') {
                     adminPanel.renderProductsList();
                 }
@@ -510,10 +544,31 @@ class DataManager {
      */
     async deletePattern(id) {
         try {
+            console.log('[DEBUG] deletePattern called for id:', id);
+            const patternsBefore = this.data.patterns.map(p => p.id);
+            const productsBefore = this.data.products.map(p => p.id);
+            console.log('[DEBUG] Patterns before delete:', patternsBefore);
+            console.log('[DEBUG] Products before delete:', productsBefore);
+            
             await this.deleteData('patterns', id);
+            console.log('[DEBUG] deleteData completed, now filtering local arrays');
+            
+            // Filter out the deleted pattern
             this.data.patterns = this.data.patterns.filter(p => p.id !== id);
-            // Also delete associated products
-            this.data.products = this.data.products.filter(p => p.pattern_id !== id);
+            console.log('[DEBUG] Patterns after delete:', this.data.patterns.map(p => p.id));
+            
+            // Also delete associated products - but only those with matching pattern_id
+            const initialProductsCount = this.data.products.length;
+            this.data.products = this.data.products.filter(p => {
+                const shouldKeep = p.pattern_id !== id;
+                if (!shouldKeep) {
+                    console.log('[DEBUG] Removing product:', p.id, 'due to pattern_id:', p.pattern_id, '=== target id:', id);
+                }
+                return shouldKeep;
+            });
+            
+            console.log('[DEBUG] Products after delete:', this.data.products.map(p => p.id));
+            console.log('[DEBUG] Products deleted:', initialProductsCount - this.data.products.length);
         } catch (error) {
             console.error('Error deleting pattern:', error);
             throw error;
@@ -552,8 +607,11 @@ class DataManager {
      */
     async addProduct(product) {
         try {
+            console.log('[DEBUG] addProduct called with:', product.id, product.name);
             const result = await this.saveData('products', product);
+            console.log('[DEBUG] addProduct saveData completed, pushing to local array:', result.id);
             this.data.products.push(result);
+            console.log('[DEBUG] addProduct completed. Total products now:', this.data.products.length);
             return result;
         } catch (error) {
             console.error('Error adding product:', error);
@@ -599,8 +657,23 @@ class DataManager {
      */
     async deleteProduct(id) {
         try {
+            console.log('[DEBUG] deleteProduct called for id:', id);
+            const productsBefore = this.data.products.map(p => p.id);
+            console.log('[DEBUG] Products before delete:', productsBefore);
+            
             await this.deleteData('products', id);
-            this.data.products = this.data.products.filter(p => p.id !== id);
+            console.log('[DEBUG] deleteData completed, now filtering local array');
+            
+            // Filter out the deleted product - using explicit ID check
+            const initialLength = this.data.products.length;
+            this.data.products = this.data.products.filter(p => {
+                const shouldKeep = p.id !== id;
+                console.log('[DEBUG] Checking product:', p.id, 'shouldKeep:', shouldKeep, 'targetId:', id);
+                return shouldKeep;
+            });
+            
+            console.log('[DEBUG] Products after delete:', this.data.products.map(p => p.id));
+            console.log('[DEBUG] Deleted count:', initialLength - this.data.products.length);
         } catch (error) {
             console.error('Error deleting product:', error);
             throw error;

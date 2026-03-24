@@ -34,8 +34,10 @@ class App {
         // Render initial content (async to wait for data)
         await this.renderInitialContent();
 
-        // Initialize admin panel
-        adminPanel.init();
+        // Initialize admin panel if it exists (only on admin.html)
+        if (typeof adminPanel !== 'undefined') {
+            adminPanel.init();
+        }
 
         this.isInitialized = true;
         console.log('Srimali Batik application initialized');
@@ -99,15 +101,6 @@ class App {
      * Handle initial route on page load
      */
     handleInitialRoute() {
-        const path = window.location.pathname;
-        const hash = window.location.hash;
-        
-        // If navigating to /admin, redirect to #admin
-        if (path === '/admin' || path.endsWith('/admin')) {
-            window.location.hash = '#admin';
-            return;
-        }
-
         this.handleRoute();
     }
 
@@ -115,44 +108,9 @@ class App {
      * Handle route changes
      */
     handleRoute() {
-        const hash = window.location.hash;
-        console.log('handleRoute called, hash:', hash);
-        const adminPanel = document.getElementById('adminPanel');
-        const hero = document.getElementById('home');
-        const designsSection = document.getElementById('designs');
-        const aboutSection = document.getElementById('about');
-        const contactSection = document.getElementById('contact');
-        const footer = document.querySelector('.footer');
-        
-        console.log('Elements found:', {
-            adminPanel: !!adminPanel,
-            hero: !!hero,
-            designsSection: !!designsSection,
-            aboutSection: !!aboutSection,
-            contactSection: !!contactSection,
-            footer: !!footer
-        });
-
-        if (hash === '#admin' || hash === '/admin') {
-            // Show admin panel
-            adminPanel.classList.add('active');
-            hero.style.display = 'none';
-            designsSection.style.display = 'none';
-            aboutSection.style.display = 'none';
-            contactSection.style.display = 'none';
-            footer.style.display = 'none';
-            document.getElementById('productDetail').classList.remove('active');
-            adminPanel.renderAll();
-        } else {
-            // Show frontend
-            adminPanel.classList.remove('active');
-            hero.style.display = 'flex';
-            designsSection.style.display = 'block';
-            aboutSection.style.display = 'block';
-            contactSection.style.display = 'block';
-            footer.style.display = 'block';
-            uiRenderer.renderPatternsGrid();
-        }
+        // Main page doesn't use hash routing for pages anymore
+        // only for anchor links scrolling
+        uiRenderer.renderPatternsGrid();
     }
 
     /**

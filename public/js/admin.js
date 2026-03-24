@@ -173,34 +173,76 @@ class AdminPanel {
      * @param {Event} e - Form submit event
      */
     async savePattern(e) {
+        console.log('[DEBUG] savePattern called');
         e.preventDefault();
+        
+        // Prevent double submission
+        if (this._isSavingPattern) {
+            console.log('[DEBUG] Pattern save already in progress, ignoring duplicate submit');
+            return;
+        }
+        this._isSavingPattern = true;
+        console.log('[DEBUG] savePattern: Setting _isSavingPattern = true');
+        
+        // Disable submit button to prevent double-click
+        const submitBtn = document.querySelector('#patternForm button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving...';
+            console.log('[DEBUG] savePattern: Submit button disabled');
+        }
         
         const id = document.getElementById('patternId').value;
         const name = document.getElementById('patternName').value.trim();
         const description = document.getElementById('patternDescription').value.trim();
         const image = document.getElementById('patternImage').value.trim();
         
+        console.log('[DEBUG] savePattern: id=', id, ', name=', name);
+        
         // Get selected colors
         const colors = typeof getPatternColorsFromForm === 'function' ? getPatternColorsFromForm() : [];
+        console.log('[DEBUG] savePattern: colors=', colors);
         
         // Validate image URL (only if provided)
         if (image && !dataManager.isValidImageUrl(image)) {
+            this._isSavingPattern = false;
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Save Pattern';
+            }
             uiRenderer.showToast('Please enter a valid image URL', 'error');
             return;
         }
         
         try {
+            // Check for duplicate name before creating
+            const existingPatterns = dataManager.getPatterns();
+            const duplicateByName = existingPatterns.find(p => p.name.toLowerCase() === name.toLowerCase());
+            if (duplicateByName) {
+                console.log('[DEBUG] savePattern: Duplicate name found:', name);
+                uiRenderer.showToast('A pattern with this name already exists', 'error');
+                this._isSavingPattern = false;
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Save Pattern';
+                }
+                return;
+            }
+            
             if (id) {
                 // Update existing pattern
+                console.log('[DEBUG] savePattern: Updating existing pattern', id);
                 await dataManager.updatePattern(id, { name, description, image, colors });
                 uiRenderer.showToast('Pattern updated successfully!', 'success');
             } else {
                 // Create new pattern
                 const newId = dataManager.generateId('p');
+                console.log('[DEBUG] savePattern: Creating new pattern with id:', newId);
                 await dataManager.addPattern({ id: newId, name, description, image, colors });
                 uiRenderer.showToast('Pattern created successfully!', 'success');
             }
             
+            console.log('[DEBUG] savePattern: Save completed, rendering lists');
             this.renderAll();
             uiRenderer.renderPatternsGrid();
             this.closeModal('patternModal');
@@ -209,6 +251,13 @@ class AdminPanel {
             // Show more specific error message to user
             const errorMessage = error.message || 'Failed to save pattern. Please try again.';
             uiRenderer.showToast(errorMessage, 'error');
+        } finally {
+            this._isSavingPattern = false;
+            console.log('[DEBUG] savePattern: Setting _isSavingPattern = false');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Save Pattern';
+            }
         }
     }
 
@@ -372,7 +421,24 @@ class AdminPanel {
      * @param {Event} e - Form submit event
      */
     async saveProduct(e) {
+        console.log('[DEBUG] saveProduct called');
         e.preventDefault();
+        
+        // Prevent double submission
+        if (this._isSavingProduct) {
+            console.log('[DEBUG] Product save already in progress, ignoring duplicate submit');
+            return;
+        }
+        this._isSavingProduct = true;
+        console.log('[DEBUG] saveProduct: Setting _isSavingProduct = true');
+        
+        // Disable submit button to prevent double-click
+        const submitBtn = document.querySelector('#productForm button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving...';
+            console.log('[DEBUG] saveProduct: Submit button disabled');
+        }
         
         const id = document.getElementById('productId').value;
         const patternId = document.getElementById('productPattern').value;
@@ -382,24 +448,48 @@ class AdminPanel {
         const image = document.getElementById('productImage').value.trim();
         const price = document.getElementById('productPrice').value.trim();
         
+        console.log('[DEBUG] saveProduct: id=', id, ', name=', name, ', patternId=', patternId);
+        
         // Validate image URL (only if provided)
         if (image && !dataManager.isValidImageUrl(image)) {
+            this._isSavingProduct = false;
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Save Product';
+            }
             uiRenderer.showToast('Please enter a valid image URL', 'error');
             return;
         }
         
         try {
+            // Check for duplicate name before creating
+            const existingProducts = dataManager.getProducts();
+            const duplicateByName = existingProducts.find(p => p.name.toLowerCase() === name.toLowerCase());
+            if (duplicateByName) {
+                console.log('[DEBUG] saveProduct: Duplicate name found:', name);
+                uiRenderer.showToast('A product with this name already exists', 'error');
+                this._isSavingProduct = false;
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Save Product';
+                }
+                return;
+            }
+            
             if (id) {
                 // Update existing product
+                console.log('[DEBUG] saveProduct: Updating existing product', id);
                 await dataManager.updateProduct(id, { patternId, name, type, description, image, price });
                 uiRenderer.showToast('Product updated successfully!', 'success');
             } else {
                 // Create new product
                 const newId = dataManager.generateId('prod');
+                console.log('[DEBUG] saveProduct: Creating new product with id:', newId);
                 await dataManager.addProduct({ id: newId, patternId, name, type, description, image, price });
                 uiRenderer.showToast('Product created successfully!', 'success');
             }
             
+            console.log('[DEBUG] saveProduct: Save completed, rendering lists');
             this.renderAll();
             this.closeModal('productModal');
         } catch (error) {
@@ -407,6 +497,13 @@ class AdminPanel {
             // Show more specific error message to user
             const errorMessage = error.message || 'Failed to save product. Please try again.';
             uiRenderer.showToast(errorMessage, 'error');
+        } finally {
+            this._isSavingProduct = false;
+            console.log('[DEBUG] saveProduct: Setting _isSavingProduct = false');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Save Product';
+            }
         }
     }
 
@@ -415,8 +512,10 @@ class AdminPanel {
      * @param {string} id - Product ID
      */
     async deleteProduct(id) {
+        console.log('[DEBUG] adminPanel.deleteProduct called for id:', id);
         if (confirm('Are you sure you want to delete this product?')) {
             try {
+                console.log('[DEBUG] adminPanel.deleteProduct: Confirmed, calling dataManager.deleteProduct');
                 await dataManager.deleteProduct(id);
                 this.renderAll();
                 uiRenderer.showToast('Product deleted successfully!', 'success');
@@ -670,6 +769,102 @@ class AdminPanel {
     // MODAL UTILITIES
     // ============================
 
+    // ============================
+    // AUTHENTICATION
+    // ============================
+
+    /**
+     * Check admin password
+     * @param {Event} event - Form submit event
+     */
+    checkPassword(event) {
+        event.preventDefault();
+        const password = document.getElementById('adminPassword').value;
+        const errorDiv = document.getElementById('passwordError');
+        
+        // Use hardcoded password for now (could be improved with API check)
+        const ADMIN_PASSWORD = 'password123';
+        
+        if (password === ADMIN_PASSWORD) {
+            // Hide password screen
+            document.getElementById('passwordScreen').style.display = 'none';
+            // Show admin panel
+            document.getElementById('adminPanelEl').classList.add('active');
+            // Initialize data and render
+            this.init();
+        } else {
+            // Show error
+            errorDiv.style.display = 'block';
+            // Clear input
+            document.getElementById('adminPassword').value = '';
+            // Focus on input
+            document.getElementById('adminPassword').focus();
+        }
+    }
+
+    /**
+     * Toggle password visibility
+     */
+    togglePasswordVisibility() {
+        const passwordInput = document.getElementById('adminPassword');
+        const toggleButton = document.getElementById('passwordToggle');
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            toggleButton.textContent = '🔒';
+            toggleButton.setAttribute('aria-label', 'Hide password');
+        } else {
+            passwordInput.type = 'password';
+            toggleButton.textContent = '👁️';
+            toggleButton.setAttribute('aria-label', 'Show password');
+        }
+    }
+
+    // ============================
+    // UTILITY FUNCTIONS
+    // ============================
+
+    /**
+     * Populate pattern color checkboxes
+     * @param {Array} selectedColors - Array of selected color IDs
+     */
+    populatePatternColors(selectedColors = []) {
+        const container = document.getElementById('patternColorsContainer');
+        if (!container) return;
+        
+        const colors = dataManager.getColors();
+        container.innerHTML = colors.map(color => `
+            <label class="color-checkbox-item ${selectedColors.includes(color.id) ? 'selected' : ''}" data-color-id="${color.id}">
+                <input type="checkbox" name="patternColors" value="${color.id}" ${selectedColors.includes(color.id) ? 'checked' : ''}>
+                <div class="color-chip" style="background-color: ${color.hex};"></div>
+                <span class="color-label">${color.name}</span>
+            </label>
+        `).join('');
+        
+        // Add click handlers
+        container.querySelectorAll('.color-checkbox-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                if (e.target.tagName !== 'INPUT') {
+                    const checkbox = this.querySelector('input');
+                    checkbox.checked = !checkbox.checked;
+                }
+                this.classList.toggle('selected', this.querySelector('input').checked);
+            });
+        });
+    }
+
+    /**
+     * Get selected colors from pattern form
+     * @returns {Array} Array of selected color IDs
+     */
+    getPatternColorsFromForm() {
+        const selectedColors = [];
+        document.querySelectorAll('input[name="patternColors"]:checked').forEach(input => {
+            selectedColors.push(input.value);
+        });
+        return selectedColors;
+    }
+
     /**
      * Close modal
      * @param {string} modalId - Modal element ID
@@ -682,7 +877,6 @@ class AdminPanel {
 // Create and export singleton instance
 const adminPanel = new AdminPanel();
 
-// Export for use in other modules
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { adminPanel };
-}
+// Global helper functions for HTML event handlers
+window.populatePatternColors = (selectedColors) => adminPanel.populatePatternColors(selectedColors);
+window.getPatternColorsFromForm = () => adminPanel.getPatternColorsFromForm();
