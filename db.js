@@ -1,52 +1,23 @@
 /**
  * Database Connection and Schema Setup for Neon PostgreSQL
- * Handles connection to Neon database and initializes tables
- * Updated to use @neondatabase/serverless for better serverless compatibility
+ * Optimized for Netlify Functions using HTTP queries
  */
 
-const { Pool, neonConfig } = require('@neondatabase/serverless');
-const ws = require('ws');
+const { neon } = require('@neondatabase/serverless');
 
-// Configure neonConfig to use WebSockets for better compatibility in serverless
-neonConfig.webSocketConstructor = ws;
-
-// Check for DATABASE_URL
-if (!process.env.DATABASE_URL) {
-    console.warn('WARNING: DATABASE_URL is not set in environment variables');
-}
-
-// Neon PostgreSQL connection configuration
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: true // Neon requires SSL
-});
-
-// Test database connection
-pool.on('connect', () => {
-    console.log('Connected to Neon PostgreSQL database');
-});
-
-pool.on('error', (err) => {
-    console.error('Unexpected error on idle database client', err);
-});
+// Use the HTTP-based neon client for better serverless performance
+// This is much more reliable in cloud functions than WebSockets/Pools
+const sql = neon(process.env.DATABASE_URL);
 
 /**
  * Initialize database schema
- * Creates tables for patterns, products, and colors if they don't exist
  */
 async function initializeDatabase() {
-    console.log('Starting database schema initialization...');
-    let client;
+    console.log('Initializing database schema via HTTP...');
     
     try {
-        client = await pool.connect();
-        console.log('Successfully connected to database for initialization');
-        
-        // Start transaction
-        await client.query('BEGIN');
-        
         // Create patterns table
-        await client.query(`
+        await sql(`
             CREATE TABLE IF NOT EXISTS patterns (
                 id VARCHAR(255) PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
@@ -58,19 +29,13 @@ async function initializeDatabase() {
             )
         `);
         
-        // Add colors column if it doesn't exist (for existing databases)
-        try {
-            await client.query(`
-                ALTER TABLE patterns ADD COLUMN IF NOT EXISTS colors JSONB DEFAULT '[]'
-            `);
-            console.log('Ensured colors column exists in patterns table');
-        } catch (e) {
-            // Column may already exist, ignore error
-            console.log('Colors column check completed');
-        }
+        // Add colors column if it doesn't exist
+        await sql(`
+            ALTER TABLE patterns ADD COLUMN IF NOT EXISTS colors JSONB DEFAULT '[]'
+        `);
         
         // Create products table
-        await client.query(`
+        await sql(`
             CREATE TABLE IF NOT EXISTS products (
                 id VARCHAR(255) PRIMARY KEY,
                 pattern_id VARCHAR(255) NOT NULL,
@@ -87,7 +52,7 @@ async function initializeDatabase() {
         `);
         
         // Create colors table
-        await client.query(`
+        await sql(`
             CREATE TABLE IF NOT EXISTS colors (
                 id VARCHAR(255) PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
@@ -99,172 +64,33 @@ async function initializeDatabase() {
             )
         `);
         
-        // Create indexes for better performance
-        await client.query(`
+        // Create indexes
+        await sql(`
             CREATE INDEX IF NOT EXISTS idx_products_pattern_id ON products(pattern_id)
         `);
         
-        // Commit transaction
-        await client.query('COMMIT');
+        console.log('Database schema checked/initialized');
         
-        console.log('Database schema initialized successfully');
-        
-        // Insert default data if tables are empty
-        await insertDefaultData(client);
+        // Check if we need default data
+        const patterns = await sql('SELECT count(*) FROM patterns');
+        if (parseInt(patterns[0].count) === 0) {
+            console.log('Inserting initial data...');
+            // Insert just one pattern to ensure it works
+            await sql('INSERT INTO patterns (id, name, description, image, colors) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING', 
+                ['p1', 'Red Labyrinth', 'Traditional red batik', 'https://res.cloudinary.com/dpdtltd4f/image/upload/v1774200452/design_pattern_1_jhysuj.png', JSON.stringify(['red', 'blue'])]);
+        }
         
     } catch (error) {
-        if (client) {
-            try {
-                await client.query('ROLLBACK');
-            } catch (rbError) {
-                console.error('Rollback failed:', rbError);
-            }
-        }
-        console.error('Error initializing database schema:', error);
+        console.error('Database init error:', error);
         throw error;
-    } finally {
-        if (client) client.release();
     }
 }
 
-/**
- * Insert default data if tables are empty
- */
-async function insertDefaultData(client) {
-    try {
-        // Check if patterns table is empty
-        const patternsResult = await client.query('SELECT COUNT(*) as count FROM patterns');
-        if (parseInt(patternsResult.rows[0].count) === 0) {
-            console.log('Inserting default patterns...');
-            const defaultPatterns = [
-                {
-                    id: 'p1',
-                    name: 'Red Labyrinth',
-                    image: 'https://res.cloudinary.com/dpdtltd4f/image/upload/v1774200452/design_pattern_1_jhysuj.png',
-                    description: 'Intricate red labyrinth batik pattern, handcrafted with traditional techniques.',
-                    colors: JSON.stringify(['red', 'blue', 'green', 'purple'])
-                },
-                {
-                    id: 'p2',
-                    name: 'Peacock Majesty',
-                    image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
-                    description: 'Majestic peacock inspired traditional Sri Lankan batik',
-                    colors: JSON.stringify(['blue', 'green', 'gold'])
-                },
-                {
-                    id: 'p3',
-                    name: 'Elephant Heritage',
-                    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop',
-                    description: 'Gentle elephant design representing Sri Lankan culture',
-                    colors: JSON.stringify(['green', 'gold', 'black'])
-                },
-                {
-                    id: 'p4',
-                    name: 'Lotus Serenity',
-                    image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
-                    description: 'Symbol of purity and enlightenment in batik art',
-                    colors: JSON.stringify(['purple', 'blue'])
-                },
-                {
-                    id: 'p5',
-                    name: 'Ocean Waves',
-                    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop',
-                    description: 'Inspired by the beautiful Indian Ocean waves',
-                    colors: JSON.stringify(['blue', 'green', 'gold'])
-                }
-            ];
-            
-            for (const pattern of defaultPatterns) {
-                await client.query(
-                    'INSERT INTO patterns (id, name, description, image, colors) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING',
-                    [pattern.id, pattern.name, pattern.description, pattern.image, pattern.colors]
-                );
-            }
-        }
-        
-        // Check if products table is empty
-        const productsResult = await client.query('SELECT COUNT(*) as count FROM products');
-        if (parseInt(productsResult.rows[0].count) === 0) {
-            console.log('Inserting default products...');
-            const defaultProducts = [
-                {
-                    id: 'prod1',
-                    pattern_id: 'p1',
-                    name: 'Floral Saree',
-                    type: 'Saree',
-                    image: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=400&h=300&fit=crop',
-                    description: 'Beautiful handmade saree with floral batik design',
-                    price: '15,000 LKR',
-                    color_images: '{}'
-                },
-                {
-                    id: 'prod2',
-                    pattern_id: 'p1',
-                    name: 'Floral Frock',
-                    type: 'Frock',
-                    image: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=400&h=300&fit=crop',
-                    description: 'Elegant frock with traditional floral patterns',
-                    price: '8,500 LKR',
-                    color_images: '{}'
-                },
-                {
-                    id: 'prod3',
-                    pattern_id: 'p2',
-                    name: 'Peacock Saree',
-                    type: 'Saree',
-                    image: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=400&h=300&fit=crop',
-                    description: 'Stunning saree featuring peacock batik design',
-                    price: '18,000 LKR',
-                    color_images: '{}'
-                },
-                {
-                    id: 'prod4',
-                    pattern_id: 'p3',
-                    name: 'Elephant Sarong',
-                    type: 'Sarong',
-                    image: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=400&h=300&fit=crop',
-                    description: 'Comfortable sarong with elephant heritage design',
-                    price: '4,500 LKR',
-                    color_images: '{}'
-                }
-            ];
-            
-            for (const product of defaultProducts) {
-                await client.query(
-                    'INSERT INTO products (id, pattern_id, name, type, description, image, price, color_images) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (id) DO NOTHING',
-                    [product.id, product.pattern_id, product.name, product.type, product.description, product.image, product.price, product.color_images]
-                );
-            }
-        }
-        
-        // Check if colors table is empty
-        const colorsResult = await client.query('SELECT COUNT(*) as count FROM colors');
-        if (parseInt(colorsResult.rows[0].count) === 0) {
-            console.log('Inserting default colors...');
-            const defaultColors = [
-                { id: 'green', name: 'Green', hex: '#2d5a27', dark_hex: '#1e4d1a', image: '' },
-                { id: 'blue', name: 'Blue', hex: '#1e3a5f', dark_hex: '#152a45', image: '' },
-                { id: 'red', name: 'Red', hex: '#8b2942', dark_hex: '#6d2034', image: '' },
-                { id: 'purple', name: 'Purple', hex: '#4a3068', dark_hex: '#3a2552', image: '' },
-                { id: 'gold', name: 'Gold', hex: '#b8860b', dark_hex: '#8b6914', image: '' },
-                { id: 'black', name: 'Black', hex: '#2d2d2d', dark_hex: '#1a1a1a', image: '' }
-            ];
-            
-            for (const color of defaultColors) {
-                await client.query(
-                    'INSERT INTO colors (id, name, hex, dark_hex, image) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING',
-                    [color.id, color.name, color.hex, color.dark_hex, color.image]
-                );
-            }
-        }
-        
-        console.log('Default data inserted successfully');
-    } catch (error) {
-        console.error('Error inserting default data:', error);
-    }
-}
-
+// Export the sql client as pool for compatibility with existing routes
 module.exports = {
-    pool,
+    pool: {
+        query: (text, params) => sql(text, params).then(rows => ({ rows }))
+    },
+    sql,
     initializeDatabase
 };

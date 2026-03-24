@@ -109,24 +109,19 @@ router.put('/patterns/:id', async (req, res) => {
 
 // Delete pattern
 router.delete('/patterns/:id', async (req, res) => {
-    let client;
     try {
-        client = await pool.connect();
         const { id } = req.params;
         
-        // Start transaction
-        await client.query('BEGIN');
+        // Use standard queries to ensure it works across all drivers
+        // First delete associated products (though CASCADE should handle it)
+        await pool.query('DELETE FROM products WHERE pattern_id = $1', [id]);
         
-        // Delete the pattern (CASCADE will automatically delete associated products)
-        const result = await client.query('DELETE FROM patterns WHERE id = $1 RETURNING *', [id]);
+        // Delete the pattern 
+        const result = await pool.query('DELETE FROM patterns WHERE id = $1 RETURNING *', [id]);
         
         if (result.rows.length === 0) {
-            await client.query('ROLLBACK');
             return res.status(404).json({ error: 'Pattern not found' });
         }
-        
-        // Commit transaction
-        await client.query('COMMIT');
         
         res.json({ message: 'Pattern deleted successfully', pattern: result.rows[0] });
         
@@ -140,24 +135,12 @@ router.delete('/patterns/:id', async (req, res) => {
             console.log('Broadcast skipped in serverless environment');
         }
     } catch (error) {
-        // Rollback transaction on error
-        if (client) {
-            try {
-                await client.query('ROLLBACK');
-            } catch (rbError) {
-                console.error('Rollback failed:', rbError);
-            }
-        }
         console.error('Error deleting pattern:', error);
         res.status(500).json({
             error: 'Failed to delete pattern',
             details: error.message,
             code: error.code
         });
-    } finally {
-        if (client) {
-            client.release();
-        }
     }
 });
 
