@@ -9,7 +9,8 @@
 // ============================
 
 const CONFIG = {
-    API_BASE_URL: window.location.origin + '/api',
+    // Netlify functions are at /.netlify/functions/api but we have redirects at /api
+    API_BASE_URL: '/api',
     WHATSAPP_NUMBER: '94769652924',
     // Cloud base URL for images (can be configured for different services)
     CLOUD_BASE_URL: 'https://res.cloudinary.com/demo/image/upload/',
@@ -192,16 +193,16 @@ class DataManager {
             
             // Basic check if data changed (length check for simplicity)
             const hasChanged = 
-                newData.patterns?.length !== this.data.patterns.length ||
-                newData.products?.length !== this.data.products.length ||
-                newData.colors?.length !== this.data.colors.length;
+                newData.patterns?.length !== (this.data.patterns ? this.data.patterns.length : 0) ||
+                newData.products?.length !== (this.data.products ? this.data.products.length : 0) ||
+                newData.colors?.length !== (this.data.colors ? this.data.colors.length : 0);
             
             if (hasChanged) {
                 console.log('Data changes detected via polling, updating UI...');
                 this.data = {
-                    patterns: (newData.patterns && newData.patterns.length > 0) ? newData.patterns : defaultData.patterns,
-                    products: (newData.products && newData.products.length > 0) ? newData.products : defaultData.products,
-                    colors: (newData.colors && newData.colors.length > 0) ? newData.colors : defaultData.colors
+                    patterns: newData.patterns || [],
+                    products: newData.products || [],
+                    colors: newData.colors || []
                 };
                 
                 // Trigger UI updates
@@ -338,23 +339,37 @@ class DataManager {
      */
     async loadData() {
         try {
+            console.log('Fetching data from API...');
             const response = await fetch(`${CONFIG.API_BASE_URL}/all`);
+            
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                const errorMessage = errorData.details || errorData.error || 'Failed to fetch data from API';
+                const errorMessage = errorData.details || errorData.error || `Server error: ${response.status}`;
                 throw new Error(errorMessage);
             }
+            
             const data = await response.json();
+            
+            // CRITICAL FIX: Only use defaultData if the API is completely unreachable or if 
+            // you explicitly want a "first run" experience. 
+            // If the API returns successfully, we MUST use what it gives us (even if empty).
             this.data = {
-                patterns: (data.patterns && data.patterns.length > 0) ? data.patterns : defaultData.patterns,
-                products: (data.products && data.products.length > 0) ? data.products : defaultData.products,
-                colors: (data.colors && data.colors.length > 0) ? data.colors : defaultData.colors
+                patterns: data.patterns || [],
+                products: data.products || [],
+                colors: data.colors || []
             };
+            
+            // If the database is truly empty, we don't merge with defaultData anymore
+            // to allow users to add their own items from scratch.
+            if (this.data.patterns.length === 0) {
+                console.log('Database is currently empty. Add your first pattern in the Admin Panel!');
+            }
+            
             this.dataLoaded = true;
         } catch (error) {
-            console.error('Error loading data from API:', error);
-            // Fallback to default data if API fails
-            this.data = defaultData;
+            console.error('Error loading data from API, using fallback:', error);
+            // ONLY fallback to default data if the API is completely down
+            this.data = JSON.parse(JSON.stringify(defaultData));
             this.dataLoaded = true;
         }
     }
@@ -545,30 +560,16 @@ class DataManager {
     async deletePattern(id) {
         try {
             console.log('[DEBUG] deletePattern called for id:', id);
-            const patternsBefore = this.data.patterns.map(p => p.id);
-            const productsBefore = this.data.products.map(p => p.id);
-            console.log('[DEBUG] Patterns before delete:', patternsBefore);
-            console.log('[DEBUG] Products before delete:', productsBefore);
             
             await this.deleteData('patterns', id);
             console.log('[DEBUG] deleteData completed, now filtering local arrays');
             
             // Filter out the deleted pattern
             this.data.patterns = this.data.patterns.filter(p => p.id !== id);
-            console.log('[DEBUG] Patterns after delete:', this.data.patterns.map(p => p.id));
             
-            // Also delete associated products - but only those with matching pattern_id
-            const initialProductsCount = this.data.products.length;
-            this.data.products = this.data.products.filter(p => {
-                const shouldKeep = p.pattern_id !== id;
-                if (!shouldKeep) {
-                    console.log('[DEBUG] Removing product:', p.id, 'due to pattern_id:', p.pattern_id, '=== target id:', id);
-                }
-                return shouldKeep;
-            });
+            // Also delete associated products local
+            this.data.products = this.data.products.filter(p => p.pattern_id !== id);
             
-            console.log('[DEBUG] Products after delete:', this.data.products.map(p => p.id));
-            console.log('[DEBUG] Products deleted:', initialProductsCount - this.data.products.length);
         } catch (error) {
             console.error('Error deleting pattern:', error);
             throw error;
@@ -609,9 +610,7 @@ class DataManager {
         try {
             console.log('[DEBUG] addProduct called with:', product.id, product.name);
             const result = await this.saveData('products', product);
-            console.log('[DEBUG] addProduct saveData completed, pushing to local array:', result.id);
             this.data.products.push(result);
-            console.log('[DEBUG] addProduct completed. Total products now:', this.data.products.length);
             return result;
         } catch (error) {
             console.error('Error adding product:', error);
@@ -658,22 +657,8 @@ class DataManager {
     async deleteProduct(id) {
         try {
             console.log('[DEBUG] deleteProduct called for id:', id);
-            const productsBefore = this.data.products.map(p => p.id);
-            console.log('[DEBUG] Products before delete:', productsBefore);
-            
             await this.deleteData('products', id);
-            console.log('[DEBUG] deleteData completed, now filtering local array');
-            
-            // Filter out the deleted product - using explicit ID check
-            const initialLength = this.data.products.length;
-            this.data.products = this.data.products.filter(p => {
-                const shouldKeep = p.id !== id;
-                console.log('[DEBUG] Checking product:', p.id, 'shouldKeep:', shouldKeep, 'targetId:', id);
-                return shouldKeep;
-            });
-            
-            console.log('[DEBUG] Products after delete:', this.data.products.map(p => p.id));
-            console.log('[DEBUG] Deleted count:', initialLength - this.data.products.length);
+            this.data.products = this.data.products.filter(p => p.id !== id);
         } catch (error) {
             console.error('Error deleting product:', error);
             throw error;
