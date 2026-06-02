@@ -1,50 +1,5 @@
-# ============================
-# Node.js Dependencies
-# ============================
 node_modules/
-
-# ============================
-# Environment Variables
-# ============================
-.env
-.env.local
-.env.*.local
-
-# ============================
-# OS Generated Files
-# ============================
-# Windows
-Thumbs.db
-Desktop.ini
-
-# macOS
-.DS_Store
-._*
-
-# Linux
-*~
-
-# ============================
-# IDE and Editor Files
-# ============================
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# ============================
-# Logs
-# ============================
+data/
 *.log
-npm-debug.log*
-
-# ============================
-# Temporary Files
-# ============================
-tmp/
-temp/
-*.tmp
-*.bak
-
-# Local Netlify folder
-.netlify
+.env
+.DS_Store

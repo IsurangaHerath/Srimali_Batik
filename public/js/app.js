@@ -1,302 +1,157 @@
 /**
  * Main Application Module
- * Handles application initialization, routing, theme management,
- * and global event listeners
+ * Handles theme management, navigation, routing, and page initialization.
  */
-
-// ============================
-// APPLICATION CLASS
-// ============================
 
 class App {
     constructor() {
         this.isInitialized = false;
     }
 
-    /**
-     * Initialize the application
-     */
     async init() {
         if (this.isInitialized) return;
 
-        // Initialize theme
         this.initTheme();
-
-        // Initialize routing
-        this.initRouting();
-
-        // Initialize navigation
         this.initNavigation();
-
-        // Initialize scroll to top
         this.initScrollToTop();
-
-        // Render initial content (async to wait for data)
         await this.renderInitialContent();
 
-        // Initialize admin panel if it exists (only on admin.html)
-        if (typeof adminPanel !== 'undefined') {
-            adminPanel.init();
-        }
-
         this.isInitialized = true;
-        console.log('Srimali Batik application initialized');
+        console.log('✅ Srimali Batik initialized');
     }
 
-    /**
-     * Initialize theme management
-     */
+    // ────────────────────────────────────────
+    // Theme
+    // ────────────────────────────────────────
+
     initTheme() {
-        const savedTheme = localStorage.getItem('theme');
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        
-        if (savedTheme) {
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            document.getElementById('themeToggle').textContent = savedTheme === 'dark' ? '☀️' : '🌙';
-            document.getElementById('productThemeToggle').textContent = savedTheme === 'dark' ? '☀️' : '🌙';
-        } else if (prefersDark) {
-            document.documentElement.setAttribute('data-theme', 'dark');
-            document.getElementById('themeToggle').textContent = '☀️';
-            document.getElementById('productThemeToggle').textContent = '☀️';
-        }
+        const saved      = localStorage.getItem('theme');
+        const preferDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme      = saved || (preferDark ? 'dark' : 'light');
 
-        // Add theme toggle listener
-        document.getElementById('themeToggle').addEventListener('click', () => {
-            this.toggleTheme();
-        });
-        
-        // Add product theme toggle listener
-        document.getElementById('productThemeToggle').addEventListener('click', () => {
-            this.toggleTheme();
+        document.documentElement.setAttribute('data-theme', theme);
+        this._updateThemeIcons(theme);
+
+        document.querySelectorAll('.theme-toggle').forEach(btn => {
+            btn.addEventListener('click', () => this.toggleTheme());
         });
     }
 
-    /**
-     * Toggle theme between light and dark
-     */
     toggleTheme() {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        
-        document.documentElement.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-        document.getElementById('themeToggle').textContent = newTheme === 'dark' ? '☀️' : '🌙';
-        document.getElementById('productThemeToggle').textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        const current = document.documentElement.getAttribute('data-theme');
+        const next    = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        this._updateThemeIcons(next);
     }
 
-    /**
-     * Initialize routing
-     */
-    initRouting() {
-        // Handle hash changes
-        window.addEventListener('hashchange', () => {
-            this.handleRoute();
-        });
-
-        // Handle initial route
-        this.handleInitialRoute();
+    _updateThemeIcons(theme) {
+        const icon = theme === 'dark' ? '☀️' : '🌙';
+        document.querySelectorAll('.theme-toggle').forEach(btn => btn.textContent = icon);
     }
 
-    /**
-     * Handle initial route on page load
-     */
-    handleInitialRoute() {
-        this.handleRoute();
-    }
+    // ────────────────────────────────────────
+    // Navigation
+    // ────────────────────────────────────────
 
-    /**
-     * Handle route changes
-     */
-    handleRoute() {
-        // Main page doesn't use hash routing for pages anymore
-        // only for anchor links scrolling
-        uiRenderer.renderPatternsGrid();
-    }
-
-    /**
-     * Initialize navigation
-     */
     initNavigation() {
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const navLinks = document.getElementById('navLinks');
-        
-        // Mobile menu toggle
-        mobileMenuBtn.addEventListener('click', () => {
-            navLinks.classList.toggle('active');
-            // Update aria-expanded for accessibility
-            const isExpanded = navLinks.classList.contains('active');
-            mobileMenuBtn.setAttribute('aria-expanded', isExpanded);
-            
-            // Change hamburger to X when open
-            mobileMenuBtn.textContent = isExpanded ? '✕' : '☰';
+        const mobileBtn = document.getElementById('mobileMenuBtn');
+        const navLinks  = document.getElementById('navLinks');
+        if (!mobileBtn || !navLinks) return;
+
+        const closeMenu = () => {
+            navLinks.classList.remove('active');
+            mobileBtn.setAttribute('aria-expanded', 'false');
+            mobileBtn.textContent = '☰';
+        };
+
+        mobileBtn.addEventListener('click', () => {
+            const isOpen = navLinks.classList.toggle('active');
+            mobileBtn.setAttribute('aria-expanded', isOpen);
+            mobileBtn.textContent = isOpen ? '✕' : '☰';
         });
 
-        // Close mobile menu on link click
-        document.querySelectorAll('.nav-links a').forEach(link => {
-            link.addEventListener('click', () => {
-                navLinks.classList.remove('active');
-                mobileMenuBtn.setAttribute('aria-expanded', 'false');
-                mobileMenuBtn.textContent = '☰';
-            });
-        });
+        // Close on nav link click
+        navLinks.querySelectorAll('a').forEach(a => a.addEventListener('click', closeMenu));
 
-
-        // Close mobile menu when clicking outside
+        // Close on outside click
         document.addEventListener('click', (e) => {
-            if (navLinks.classList.contains('active') && 
-                !navLinks.contains(e.target) && 
-                !mobileMenuBtn.contains(e.target)) {
-                navLinks.classList.remove('active');
-                mobileMenuBtn.setAttribute('aria-expanded', 'false');
-                mobileMenuBtn.textContent = '☰';
+            if (navLinks.classList.contains('active') &&
+                !navLinks.contains(e.target) && !mobileBtn.contains(e.target)) {
+                closeMenu();
             }
         });
 
-        // Close mobile menu on Escape key
+        // Close on ESC
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && navLinks.classList.contains('active')) {
-                navLinks.classList.remove('active');
-                mobileMenuBtn.setAttribute('aria-expanded', 'false');
-                mobileMenuBtn.textContent = '☰';
-                mobileMenuBtn.focus();
+                closeMenu();
+                mobileBtn.focus();
             }
+        });
+
+        // Close on resize to desktop
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 1024) closeMenu();
         });
 
         // Smooth scroll for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function(e) {
-                const href = this.getAttribute('href');
-                
-                // Don't prevent default for admin link
-                if (href === '#admin') {
-                    return;
-                }
-
                 e.preventDefault();
-                const target = document.querySelector(href);
-                if (target && !target.classList.contains('admin-panel')) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
         });
 
-        // Back to designs button
-        document.getElementById('backBtn').addEventListener('click', () => {
-            uiRenderer.closeProductDetail();
-        });
-        
-        // Handle window resize to close mobile menu on desktop
-        window.addEventListener('resize', () => {
-            if (window.innerWidth > 1024 && navLinks.classList.contains('active')) {
-                navLinks.classList.remove('active');
-                mobileMenuBtn.setAttribute('aria-expanded', 'false');
-                mobileMenuBtn.textContent = '☰';
-            }
-        });
+        // Back button in product detail
+        const backBtn = document.getElementById('backBtn');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => uiRenderer.closeProductDetail());
+        }
     }
 
-    /**
-     * Initialize scroll to top button
-     */
+    // ────────────────────────────────────────
+    // Scroll to top
+    // ────────────────────────────────────────
+
     initScrollToTop() {
-        const scrollTop = document.getElementById('scrollTop');
-        
-        // Show/hide scroll to top button
+        const btn = document.getElementById('scrollTop');
+        if (!btn) return;
+
         window.addEventListener('scroll', () => {
-            if (window.scrollY > 300) {
-                scrollTop.classList.add('visible');
-            } else {
-                scrollTop.classList.remove('visible');
-            }
+            btn.classList.toggle('visible', window.scrollY > 300);
         });
 
-        // Scroll to top on click
-        scrollTop.addEventListener('click', () => {
+        btn.addEventListener('click', () => {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
     }
 
-    /**
-     * Render initial content
-     */
+    // ────────────────────────────────────────
+    // Initial content render
+    // ────────────────────────────────────────
+
     async renderInitialContent() {
-        // Wait for data to be loaded from API
         await dataManager.loadData();
-        uiRenderer.renderPatternsGrid();
-    }
-
-    /**
-     * Show frontend (hide admin panel)
-     */
-    showFrontend() {
-        window.location.hash = '';
+        if (typeof uiRenderer !== 'undefined') {
+            uiRenderer.renderPatternsGrid();
+        }
     }
 }
 
 // ============================
-// GLOBAL FUNCTIONS
+// BOOT
 // ============================
 
-// These functions are called from HTML onclick attributes
-// They delegate to the appropriate module
-
-function showFrontend() {
-    app.showFrontend();
-}
-
-function openPatternModal(patternId = null) {
-    adminPanel.openPatternModal(patternId);
-}
-
-function openProductModal(productId = null) {
-    adminPanel.openProductModal(productId);
-}
-
-function openColorModal(colorId = null) {
-    adminPanel.openColorModal(colorId);
-}
-
-function closeModal(modalId) {
-    adminPanel.closeModal(modalId);
-}
-
-function savePattern(e) {
-    adminPanel.savePattern(e);
-}
-
-function saveProduct(e) {
-    adminPanel.saveProduct(e);
-}
-
-function saveColor(e) {
-    adminPanel.saveColor(e);
-}
-
-function previewImage(url) {
-    adminPanel.previewImage(url);
-}
-
-function previewProductImage(url) {
-    adminPanel.previewProductImage(url);
-}
-
-// ============================
-// INITIALIZATION
-// ============================
-
-// Create app instance
 const app = new App();
 
-// Initialize when DOM is ready
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        app.init();
-    });
+    document.addEventListener('DOMContentLoaded', () => app.init());
 } else {
     app.init();
 }
 
-// Export for use in other modules
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { app };
 }

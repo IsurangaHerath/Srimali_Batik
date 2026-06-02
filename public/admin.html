@@ -5,134 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel | Srimali Batik</title>
     
-    <!-- Google Fonts -->
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦋</text></svg>">
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- External CSS -->
     <link rel="stylesheet" href="css/styles.css">
     
     <style>
-        /* Password Screen Styles */
-        .password-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        /* Admin Theme Toggle - Round */
+        .admin-panel .theme-toggle,
+        .admin-actions .theme-toggle {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #f5f0e8;
             display: flex;
+            align-items: center;
             justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-        
-        .password-container {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            max-width: 400px;
-            width: 90%;
-            text-align: center;
-        }
-        
-        .password-container h1 {
-            color: #fff;
-            margin-bottom: 10px;
-            font-family: 'Playfair Display', serif;
-            font-size: 2rem;
-        }
-        
-        .password-container p {
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 30px;
-            font-size: 0.9rem;
-        }
-        
-        .password-input-group {
-            margin-bottom: 20px;
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-        
-        .password-input-group input {
-            width: 100%;
-            padding: 15px 50px 15px 20px;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            box-sizing: border-box;
-        }
-        
-        .password-toggle {
-            position: absolute;
-            right: 15px;
-            background: none;
-            border: none;
-            color: rgba(255, 255, 255, 0.6);
+            font-size: 1.3rem;
             cursor: pointer;
-            font-size: 1.2rem;
-            padding: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: color 0.3s ease;
+            transition: all 0.3s ease;
+            border: 2px solid #e0d8cc;
         }
         
-        .password-toggle:hover {
-            color: #fff;
-        }
-        
-        .password-input-group input:focus {
-            outline: none;
+        .admin-panel .theme-toggle:hover,
+        .admin-actions .theme-toggle:hover {
+            background: linear-gradient(135deg, #b8860b, #d4a84b);
             border-color: #b8860b;
-            background: rgba(255, 255, 255, 0.15);
+            transform: rotate(15deg);
         }
-        
-        .password-btn {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 10px;
-            background: linear-gradient(135deg, #b8860b 0%, #d4a84b 100%);
-            color: #fff;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .password-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(184, 134, 11, 0.4);
-        }
-        
-        .password-error {
-            color: #ff6b6b;
-            margin-top: 15px;
-            font-size: 0.9rem;
-            display: none;
-        }
-        
-        /* Hide admin panel by default */
-        .admin-panel {
-            display: none;
-        }
-        
-        .admin-panel.active {
-            display: block;
-        }
-        
+
         /* Color Checkbox List */
         .color-checkbox-list {
             display: flex;
@@ -145,46 +49,47 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 12px;
+            padding: 10px 14px;
             background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
             cursor: pointer;
             transition: all 0.3s ease;
+            user-select: none;
+            min-height: 44px;
+        }
+        
+        .color-checkbox-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.4);
         }
         
         .color-checkbox-item.selected {
-            background: rgba(184, 134, 11, 0.2);
+            background: rgba(184, 134, 11, 0.3);
             border-color: #b8860b;
         }
         
         .color-checkbox-item input {
             display: none;
         }
+        
+        .color-checkbox-item .color-chip {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            flex-shrink: 0;
+        }
+        
+        .color-checkbox-item .color-label {
+            color: #fff;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
-    <!-- Password Screen -->
-    <div class="password-screen" id="passwordScreen">
-        <div class="password-container">
-            <h1>🔐 Admin Access</h1>
-            <p>Enter the password to access the admin panel</p>
-            <form id="passwordForm" onsubmit="adminPanel.checkPassword(event)">
-                <div class="password-input-group">
-                    <input type="password" id="adminPassword" placeholder="Enter password" required autofocus>
-                    <button type="button" class="password-toggle" id="passwordToggle" onclick="adminPanel.togglePasswordVisibility()" aria-label="Show/Hide password">👁️</button>
-                </div>
-                <button type="submit" class="password-btn">Access Admin Panel</button>
-            </form>
-            <div class="password-error" id="passwordError">Incorrect password. Please try again.</div>
-            <div class="back-to-site" style="margin-top: 20px;">
-                <a href="/" style="color: rgba(255,255,255,0.7); text-decoration: none;">← Back to Main Site</a>
-            </div>
-        </div>
-    </div>
-
     <!-- ADMIN PANEL -->
-    <div class="admin-panel" id="adminPanelEl">
+    <div class="admin-panel active" id="adminPanelEl">
         <div class="admin-container">
             <div class="admin-header">
                 <h1>Admin Panel</h1>
@@ -319,6 +224,11 @@
                     <input type="text" id="productPrice" placeholder="e.g., 15,000 LKR">
                 </div>
                 <div class="form-group">
+                    <label>Available Colors</label>
+                    <small class="text-muted">Select colors available for this product</small>
+                    <div id="productColorsContainer" class="color-checkbox-list"></div>
+                </div>
+                <div class="form-group">
                     <button type="submit" class="btn btn-primary">Save Product</button>
                     <button type="button" class="btn btn-secondary" onclick="adminPanel.closeModal('productModal')">Cancel</button>
                 </div>
@@ -365,8 +275,8 @@
     <script src="js/ui.js"></script>
     <script src="js/admin.js"></script>
     <script>
-        // Initialize admin theme on load
-        document.addEventListener('DOMContentLoaded', () => {
+        // Initialize admin on load
+        document.addEventListener('DOMContentLoaded', async () => {
             const savedTheme = localStorage.getItem('theme') || 'dark';
             document.documentElement.setAttribute('data-theme', savedTheme);
             const themeToggle = document.getElementById('themeToggle');
@@ -380,6 +290,10 @@
                     themeToggle.textContent = newTheme === 'dark' ? '☀️' : '🌙';
                 });
             }
+            
+            // Wait for data to load before init
+            await dataManager.loadData();
+            adminPanel.init();
         });
     </script>
 </body>

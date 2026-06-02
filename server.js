@@ -1,102 +1,156 @@
 /**
- * Main Server File for Srimali Batik (Local Development)
- * Updated to use the shared library folder
+ * Srimali Batik — Local Server
+ * Fully local-only. No cloud services required.
+ * Database: SQLite (auto-created at data/srimali.db)
  */
 
 const express = require('express');
-require('dotenv').config();
 const http = require('http');
 const WebSocket = require('ws');
 const cors = require('cors');
 const path = require('path');
 
-// Import from the shared library folder used by Netlify Functions
-const { initializeDatabase } = require('./netlify/functions/lib/db');
-const apiRoutes = require('./netlify/functions/lib/routes');
-const { addClient, removeClient, broadcastToOthers } = require('./netlify/functions/lib/broadcast');
+const { initializeDatabase } = require('./src/db');
+const { addClient, removeClient, broadcastToOthers } = require('./src/broadcast');
 
-const app = express();
+// Route modules
+const patternsRouter = require('./src/routes/patterns');
+const productsRouter = require('./src/routes/products');
+const colorsRouter  = require('./src/routes/colors');
+
+const app    = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const wss    = new WebSocket.Server({ server });
 
 const PORT = process.env.PORT || 3000;
 
+// ────────────────────────────────────────────────────────────
 // Middleware
+// ────────────────────────────────────────────────────────────
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// API Routes - mount directly at /api to match Netlify redirects
-app.use('/api', apiRoutes);
+// ────────────────────────────────────────────────────────────
+// API — GET /api/all (fetch all data for the frontend)
+// ────────────────────────────────────────────────────────────
 
-// Health check and init for local dev
-app.get('/api/_health', (req, res) => {
-    res.json({ status: 'ok', local: true });
-});
-
-app.get('/api/_init', async (req, res) => {
+app.get('/api/all', (req, res) => {
     try {
-        await initializeDatabase();
-        res.json({ message: 'Local database initialized successfully' });
+        const { getDb } = require('./src/db');
+        const db = getDb();
+
+        const patterns = db.prepare('SELECT * FROM patterns ORDER BY created_at DESC').all();
+        const products = db.prepare('SELECT * FROM products ORDER BY created_at DESC').all();
+        const colors   = db.prepare('SELECT * FROM colors   ORDER BY name ASC').all();
+
+        res.json({
+            patterns: patterns.map(p => ({
+                id:          p.id,
+                name:        p.name,
+                description: p.description,
+                image:       p.image,
+                colors:      JSON.parse(p.colors || '[]')
+            })),
+            products: products.map(p => ({
+                id:          p.id,
+                pattern_id:  p.pattern_id,
+                name:        p.name,
+                type:        p.type,
+                description: p.description,
+                image:       p.image,
+                price:       p.price,
+                colors:      JSON.parse(p.colors || '[]')
+            })),
+            colors: colors.map(c => ({
+                id:      c.id,
+                name:    c.name,
+                hex:     c.hex,
+                darkHex: c.dark_hex,
+                image:   c.image
+            }))
+        });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error('Error fetching data:', error);
+        res.status(500).json({ error: 'Failed to fetch data', details: error.message });
     }
 });
 
-// Serve index.html for root path
+// ────────────────────────────────────────────────────────────
+// API — CRUD routes
+// ────────────────────────────────────────────────────────────
+
+app.use('/api/patterns', patternsRouter);
+app.use('/api/products', productsRouter);
+app.use('/api/colors',   colorsRouter);
+
+// ────────────────────────────────────────────────────────────
+// API — Health check
+// ────────────────────────────────────────────────────────────
+
+app.get('/api/_health', (req, res) => {
+    res.json({ status: 'ok', local: true, version: '2.0.0' });
+});
+
+// ────────────────────────────────────────────────────────────
+// Page routes
+// ────────────────────────────────────────────────────────────
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Serve admin.html for admin path
 app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-// ============================
-// WebSocket for Real-time Sync
-// ============================
+// ────────────────────────────────────────────────────────────
+// WebSocket — real-time sync between admin & storefront tabs
+// ────────────────────────────────────────────────────────────
 
 wss.on('connection', (ws) => {
-    console.log('New WebSocket client connected');
     addClient(ws);
-    
+
     ws.send(JSON.stringify({
-        type: 'connection',
-        message: 'Connected to Srimali Batik real-time sync'
+        type:    'connection',
+        message: 'Connected to Srimali Batik local server'
     }));
-    
+
     ws.on('message', (message) => {
         try {
             const data = JSON.parse(message);
             broadcastToOthers(ws, data);
         } catch (error) {
-            console.error('Error parsing WebSocket message:', error);
+            // Ignore malformed messages
         }
     });
-    
+
     ws.on('close', () => {
         removeClient(ws);
     });
 });
 
-// ============================
-// Start Server
-// ============================
+// ────────────────────────────────────────────────────────────
+// Startup
+// ────────────────────────────────────────────────────────────
 
-async function startServer() {
+function start() {
     try {
-        // We don't force init on start to avoid blocking
+        // Initialize SQLite tables (creates DB file if it doesn't exist)
+        initializeDatabase();
+
         server.listen(PORT, () => {
             console.log('\n========================================');
-            console.log('🚀 Local Server Ready!');
-            console.log(`   🌐 Site: http://localhost:${PORT}`);
-            console.log(`   📊 Admin: http://localhost:${PORT}/admin`);
+            console.log('🦋 Srimali Batik — Local Server Ready!');
+            console.log(`   🌐 Storefront : http://localhost:${PORT}`);
+            console.log(`   📊 Admin Panel: http://localhost:${PORT}/admin`);
             console.log('========================================\n');
         });
     } catch (error) {
-        console.error('Failed to start server:', error);
+        console.error('❌ Failed to start server:', error.message);
+        process.exit(1);
     }
 }
 
-startServer();
+start();
