@@ -1,44 +1,64 @@
-/**
- * Database Module — SQLite (local-only)
- * Auto-creates the database file at data/srimali.db on first run.
- * No environment variables or cloud services required.
- */
+import Database from 'better-sqlite3';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 
-const Database = require('better-sqlite3');
-const path = require('path');
-const fs = require('fs');
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Ensure the data directory exists
-const DATA_DIR = path.join(__dirname, '..', 'data');
+const DATA_DIR = path.join(__dirname, '..', '..', 'data');
 if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
 const DB_PATH = path.join(DATA_DIR, 'srimali.db');
 
-let db = null;
+let db: Database.Database | null = null;
 
-/**
- * Get or create the SQLite database connection (singleton)
- */
-function getDb() {
+export function getDb(): Database.Database {
     if (!db) {
         db = new Database(DB_PATH);
-        // Enable WAL mode for better performance
         db.pragma('journal_mode = WAL');
         db.pragma('foreign_keys = ON');
     }
     return db;
 }
 
-/**
- * Initialize all database tables.
- * Safe to call multiple times — uses CREATE TABLE IF NOT EXISTS.
- */
-function initializeDatabase() {
+export interface PatternRow {
+    id: string;
+    name: string;
+    description: string;
+    image: string;
+    colors: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface ProductRow {
+    id: string;
+    pattern_id: string;
+    name: string;
+    type: string;
+    description: string;
+    image: string;
+    price: string;
+    colors: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface ColorRow {
+    id: string;
+    name: string;
+    hex: string;
+    dark_hex: string;
+    image: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export function initializeDatabase(): void {
     const database = getDb();
 
-    // Patterns table
     database.exec(`
         CREATE TABLE IF NOT EXISTS patterns (
             id          TEXT PRIMARY KEY,
@@ -51,7 +71,6 @@ function initializeDatabase() {
         )
     `);
 
-    // Products table
     database.exec(`
         CREATE TABLE IF NOT EXISTS products (
             id          TEXT PRIMARY KEY,
@@ -67,7 +86,6 @@ function initializeDatabase() {
         )
     `);
 
-    // Colors table
     database.exec(`
         CREATE TABLE IF NOT EXISTS colors (
             id         TEXT PRIMARY KEY,
@@ -80,7 +98,5 @@ function initializeDatabase() {
         )
     `);
 
-    console.log(`✅ Database ready at: ${DB_PATH}`);
+    console.log(`Database ready at: ${DB_PATH}`);
 }
-
-module.exports = { getDb, initializeDatabase };

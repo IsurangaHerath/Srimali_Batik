@@ -1,0 +1,145 @@
+/* ========================================
+   DESIGN TOKENS — Single source of truth
+   ======================================== */
+
+:root {
+    /* ── Typography ── */
+    --font-display: 'Playfair Display', Georgia, serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.25rem;
+    --text-2xl: 1.5rem;
+    --text-3xl: 1.875rem;
+    --text-4xl: 2.25rem;
+    --text-5xl: 3rem;
+
+    --font-normal: 400;
+    --font-medium: 500;
+    --font-semibold: 600;
+    --font-bold: 700;
+
+    --leading-tight: 1.25;
+    --leading-normal: 1.6;
+    --leading-relaxed: 1.75;
+
+    /* ── Spacing ── */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+    --space-12: 48px;
+    --space-16: 64px;
+
+    /* ── Border Radius ── */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+    --radius-full: 9999px;
+
+    /* ── Shadows ── */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+    --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.06);
+    --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.12), 0 8px 20px rgba(0, 0, 0, 0.08);
+
+    /* ── Transitions ── */
+    --transition-fast: 150ms ease;
+    --transition-normal: 250ms ease;
+    --transition-slow: 400ms ease;
+
+    /* ── Z-index layers ── */
+    --z-dropdown: 100;
+    --z-sticky: 200;
+    --z-fixed: 300;
+    --z-modal-backdrop: 400;
+    --z-modal: 500;
+    --z-popover: 600;
+    --z-toast: 700;
+    --z-tooltip: 800;
+}
+
+/* ── Light Theme ── */
+[data-theme="light"] {
+    --bg-primary: #faf8f5;
+    --bg-secondary: #f0ebe3;
+    --bg-card: #ffffff;
+    --bg-navbar: rgba(255, 255, 255, 0.95);
+    --bg-input: #ffffff;
+
+    --text-primary: #0f0f0f;
+    --text-secondary: #44403c;
+    --text-muted: #78716c;
+    --text-inverse: #ffffff;
+
+    --accent-primary: #b8860b;
+    --accent-secondary: #8b6914;
+    --accent-gold: #d4a84b;
+    --accent-light: #f5e6b8;
+
+    --border-color: #e7e2dc;
+    --border-light: #f0ebe3;
+
+    --shadow-color: rgba(0, 0, 0, 0.06);
+    --shadow-hover: rgba(0, 0, 0, 0.12);
+
+    --whatsapp-green: #25D366;
+    --whatsapp-hover: #20BD5A;
+
+    --danger: #dc2626;
+    --danger-light: #fef2f2;
+    --success: #16a34a;
+    --success-light: #f0fdf4;
+    --info: #0891b2;
+    --info-light: #ecfeff;
+
+    --skeleton-base: #e7e2dc;
+    --skeleton-highlight: #f0ebe3;
+}
+
+/* ── Dark Theme ── */
+[data-theme="dark"] {
+    --bg-primary: #0f0d0a;
+    --bg-secondary: #1a1815;
+    --bg-card: #24211e;
+    --bg-navbar: rgba(26, 24, 21, 0.95);
+    --bg-input: #2d2a27;
+
+    --text-primary: #f5f5f5;
+    --text-secondary: #a8a29e;
+    --text-muted: #78716c;
+    --text-inverse: #0f0f0f;
+
+    --accent-primary: #d4a84b;
+    --accent-secondary: #b8860b;
+    --accent-gold: #e8c76c;
+    --accent-light: #3d3520;
+
+    --border-color: #3d3835;
+    --border-light: #2d2a27;
+
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    --shadow-hover: rgba(0, 0, 0, 0.5);
+
+    --whatsapp-green: #16a34a;
+    --whatsapp-hover: #15803d;
+
+    --danger: #ef4444;
+    --danger-light: #450a0a;
+    --success: #22c55e;
+    --success-light: #052e16;
+    --info: #06b6d4;
+    --info-light: #083344;
+
+    --skeleton-base: #2d2a27;
+    --skeleton-highlight: #3d3835;
+}
