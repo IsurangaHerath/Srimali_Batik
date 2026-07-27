@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken'
+import { config } from '../config/env'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production-min-32-chars!!'
+const JWT_SECRET = config.jwtSecret
 const JWT_EXPIRES_IN = '24h'
 
 export function signToken(payload: { sub: string; username: string }) {
