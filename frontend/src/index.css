@@ -1,0 +1,101 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-primary: #8B5E3C;
+    --color-primary-hover: #7A4F2E;
+    --color-primary-light: #E8D5C4;
+    --color-primary-foreground: #FFFFFF;
+    --color-secondary: #D4A574;
+    --color-secondary-hover: #C49564;
+    --color-secondary-foreground: #1A1A2E;
+    --color-accent: #C0392B;
+    --color-accent-foreground: #FFFFFF;
+    --color-background: #FDFBF7;
+    --color-surface: #FFFFFF;
+    --color-card: #FFFFFF;
+    --color-muted: #F5F0EB;
+    --color-border: #E5E0DB;
+    --color-ring: #8B5E3C;
+    --color-text-primary: #1A1A2E;
+    --color-text-secondary: #6B7280;
+    --color-text-muted: #9CA3AF;
+  }
+
+  .dark {
+    --color-primary: #D4A574;
+    --color-primary-hover: #E0B88A;
+    --color-primary-light: #2A1F14;
+    --color-primary-foreground: #0F0F1A;
+    --color-secondary: #8B5E3C;
+    --color-secondary-hover: #9B6E4C;
+    --color-secondary-foreground: #F1F0FB;
+    --color-accent: #E74C3C;
+    --color-accent-foreground: #FFFFFF;
+    --color-background: #0F0F1A;
+    --color-surface: #1A1A2E;
+    --color-card: #1E1E36;
+    --color-muted: #2A2A44;
+    --color-border: #2D2D48;
+    --color-ring: #D4A574;
+    --color-text-primary: #F1F0FB;
+    --color-text-secondary: #9CA3AF;
+    --color-text-muted: #6B7280;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-text-primary font-sans antialiased;
+  }
+
+  ::selection {
+    @apply bg-primary-light text-text-primary;
+  }
+}
+
+@layer components {
+  .container-custom {
+    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .heading-1 {
+    @apply font-display text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight;
+  }
+
+  .heading-2 {
+    @apply font-display text-3xl md:text-4xl font-semibold tracking-tight;
+  }
+
+  .heading-3 {
+    @apply font-display text-2xl md:text-3xl font-semibold;
+  }
+
+  .heading-4 {
+    @apply font-display text-xl md:text-2xl font-semibold;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+  }
+
+  .glass {
+    background-color: color-mix(in srgb, var(--color-muted) 80%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+@supports not (backdrop-filter: blur()) {
+  .glass {
+    background-color: var(--color-muted);
+  }
+}
+
+  .fade-enter {
+    @apply animate-fade-in;
+  }
+}

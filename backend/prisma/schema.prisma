@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  patterns    Pattern[]
+}
+
+model Color {
+  id        String         @id @default(uuid())
+  name      String         @unique
+  slug      String         @unique
+  hex       String
+  darkHex   String?
+  imageUrl  String?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  patterns  PatternColor[]
+  products  ProductColor[]
+}
+
+model Pattern {
+  id          String         @id @default(uuid())
+  name        String         @unique
+  slug        String         @unique
+  description String?
+  imageUrl    String?
+  categoryId  String?
+  category    Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  products    Product[]
+  colors      PatternColor[]
+}
+
+model PatternColor {
+  patternId String
+  colorId   String
+  pattern   Pattern @relation(fields: [patternId], references: [id], onDelete: Cascade)
+  color     Color   @relation(fields: [colorId], references: [id], onDelete: Cascade)
+
+  @@id([patternId, colorId])
+  @@index([colorId])
+}
+
+model Product {
+  id          String         @id @default(uuid())
+  patternId   String
+  pattern     Pattern        @relation(fields: [patternId], references: [id], onDelete: Cascade)
+  name        String
+  slug        String         @unique
+  type        String?
+  description String?
+  imageUrl    String?
+  price       String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  colors      ProductColor[]
+
+  @@index([patternId])
+}
+
+model ProductColor {
+  productId String
+  colorId   String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  color     Color   @relation(fields: [colorId], references: [id], onDelete: Cascade)
+
+  @@id([productId, colorId])
+  @@index([colorId])
+}
+
+model Setting {
+  id    String @id @default(uuid())
+  key   String @unique
+  value String
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  action    String
+  entity    String
+  entityId  String?
+  detail    String?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([action])
+}
