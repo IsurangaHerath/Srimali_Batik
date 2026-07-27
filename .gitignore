@@ -1,6 +1,5 @@
 node_modules/
 dist/
-public/dist/
 data/
 *.db
 *.db-journal
@@ -13,3 +12,4 @@ Thumbs.db
 .idea/
 *.log
 npm-debug.log*
+.kilo/
